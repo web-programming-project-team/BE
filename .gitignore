@@ -1,0 +1,29 @@
+# env / secrets
+.env
+.env.*
+!.env.example
+**/application-local.yml
+
+# gradle / build
+HELP.md
+.gradle/
+build/
+out/
+bin/
+*.class
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# IDE / OS
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.factorypath
+.project
+.settings/
+.DS_Store
+Thumbs.db

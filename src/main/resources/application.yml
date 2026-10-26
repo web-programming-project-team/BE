@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: next-siheung
+  profiles:
+    active: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    time-zone: Asia/Seoul
+
+server:
+  port: 8080
+
+app:
+  cors:
+    allowed-origins: http://localhost:5173
+  jwt:
+    access-token-validity-seconds: 1800      # 30분
+    refresh-token-validity-seconds: 1209600  # 14일
+  batch:
+    policy-sync-cron: "0 0 3 * * *"          # 매일 03:00 온통청년
+    job-sync-cron: "0 0 4 * * *"             # 매일 04:00 고용24
+    deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
+    enabled: false                           # 키 발급 전까지 꺼 둠

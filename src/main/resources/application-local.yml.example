@@ -1,0 +1,18 @@
+# 이 파일을 application-local.yml로 복사해 값을 채운다 (application-local.yml은 커밋하지 않음)
+# username/password는 루트 .env의 DB_USER/DB_PASSWORD와 같아야 한다
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/next_siheung?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: nextstep
+    password: change-me
+  jpa:
+    hibernate:
+      ddl-auto: update        # 로컬 초기 개발만. ERD 확정 후 validate + 마이그레이션 도입 검토
+    show-sql: true
+
+app:
+  jwt:
+    secret: change-me-to-a-random-256-bit-base64-string
+  external:
+    ontong-api-key: ""
+    work24-api-key: ""
