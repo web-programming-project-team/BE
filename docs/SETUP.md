@@ -233,14 +233,19 @@ npm install
 ```
 src
 ├── api/            client.js (axios 인스턴스). 도메인별 파일(auth.js, roadmap.js ...)은 기능 개발 때 추가
-├── components/     공통 컴포넌트 자리 (StatusBadge, DdayTag, Chip, Button, Card ...) — FE-테스트
+├── components/     공통 컴포넌트 (컴포넌트마다 폴더 + CSS Module)
+│                   Header, Footer, Logo, Button, Card, Chip/Tag/ChipGroup, StatusSelect(진행상태 배지),
+│                   DdayTag, Modal, Toggle, Stars, NotificationDropdown(알림 센터)
 ├── constants/      enumLabels.js (서버 enum → 화면 표시명, 명세 v1.1 기준)
+├── context/        AppState.jsx (진행상태·관심 공고·알림 읽음·프로필 — API 연결 전 임시 공유 상태)
 ├── hooks/
-├── layouts/        AppLayout (헤더 + 메뉴 4개), AuthLayout
+├── layouts/        AppLayout (헤더 + 메뉴 4개), AuthLayout, AdminLayout (사이드바)
+├── mocks/          data.js (Figma 시안의 예시 데이터, 필드 이름은 명세 응답 기준)
 ├── pages/          auth, onboarding, roadmap, policy, jobs, community, calendar, me, admin, HealthCheck, NotFound
-├── styles/         tokens.css (색·글꼴 토큰)
+├── styles/         tokens.css (디자인 토큰), global.css (리셋·.container)
+├── utils/          date.js (기준일·D-day·날짜 형식), set.js
 ├── App.jsx         라우터
-└── main.jsx        BrowserRouter, tokens.css
+└── main.jsx        BrowserRouter, AppStateProvider, Pretendard 글꼴
 ```
 
 ### 4-3. 환경 변수와 개발 서버 프록시
@@ -263,7 +268,7 @@ cp .env.example .env      # VITE_API_BASE_URL=/api/v1
 | 경로 | 페이지 | 메뉴 | 레이아웃 |
 | --- | --- | --- | --- |
 | `/login`, `/signup` | 로그인·회원가입 | — | AuthLayout |
-| `/onboarding` | 상태·관심분야 등록 (3단계) | — | AuthLayout |
+| `/onboarding` | 상태·관심분야 등록 (3단계) | — | 자체 헤더·푸터 |
 | `/` | 내 로드맵 (메인) | 내 로드맵 | AppLayout |
 | `/policies/:policyId` | 정책·프로그램 상세 | — | AppLayout |
 | `/jobs` | 맞춤 채용 | 맞춤 채용 | AppLayout |
@@ -272,15 +277,20 @@ cp .env.example .env      # VITE_API_BASE_URL=/api/v1
 | `/community/:postId` | 게시글 상세 | — | AppLayout |
 | `/calendar` | NEXT 캘린더 | NEXT 캘린더 | AppLayout |
 | `/me` | 내 기록 (지난 로드맵, 내가 쓴 후기) | 프로필 메뉴 | AppLayout |
-| `/admin/*` | 관리자 (정책 관리, 템플릿, 신고, 수집) | 관리자만 | AppLayout |
+| `/admin/policies` 외 3개 | 관리자 (정책 관리, 템플릿, 신고, 수집) | 관리자만 | AdminLayout |
 | `/health` | **임시** 연결 확인 | — | AppLayout |
 
 메뉴는 4개(내 로드맵 / 맞춤 채용 / 커뮤니티 / NEXT 캘린더)로 고정한다(제안서 5-5). 알림 센터는 헤더의 종 아이콘 드롭다운이라 별도 경로가 없다. 1분 후기 작성과 상황 변경은 모달로 띄운다.
-지금 각 페이지는 제목만 있는 빈 컴포넌트다.
+Figma 시안 12개 프레임(온보딩, 로그인, 내 로드맵, 정책 상세, 맞춤 채용, 필터, 커뮤니티, 1분 후기, 캘린더, 알림 센터, 상황변경, 관리자 정책관리)은 화면으로 구현돼 있고, 데이터는 `mocks/data.js`를 쓴다. 채용공고 상세, 게시글 상세, 내 기록은 시안이 없어 아직 빈 페이지다.
 
 ### 4-6. 디자인 토큰
 
-`src/styles/tokens.css`: 기본색 `#0F9D8A`, 배경·카드·선·글자 3단계, 위험(D-3 이하)·경고(D-4~D-7), 진행상태 배지 6종(글자/배경), 카드 radius 16px, Pretendard 글꼴 스택.
+`src/styles/tokens.css` — Figma 실제 값 기준. 색·간격·글자 크기·모서리·그림자는 CSS에서 항상 이 변수로 쓴다.
+
+- 색: 기본 `--color-primary #009689`, 강조 글자 `--color-primary-strong`, 선택 배경 `--color-primary-soft`, 글자 4단계(`--color-text`~`--color-text-4`), 위험(D-3 이하)·경고(D-4~D-7), 진행상태 배지 6종, 캘린더 일정 점 6종(`--ev-*`)
+- 간격 `--space-*` (2·4·6·8·10·12·16·20·24·28·32·40·48px), 글자 `--fs-*` (12~40px)
+- 모서리 `--radius-sm/md/card/pill` (8·16·24·무한), 그림자 `--shadow-card`, `--shadow-pop`
+- 레이아웃 `--header-height 64px`, `--container-width 1200px`, `--side-width 384px`, 글꼴 Pretendard(npm `pretendard`)
 
 ### 4-7. 연결 확인
 
