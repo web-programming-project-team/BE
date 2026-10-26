@@ -307,10 +307,15 @@ npm run dev    # http://localhost:5173/health
 ### 브랜치
 
 ```
-main      발표·제출용. develop에서만 합친다.
-develop   통합 브랜치. 모든 기능 PR의 대상.
-feat/#<이슈번호>-<짧은설명>   예) feat/#12-roadmap-status
-fix/#<이슈번호>-<짧은설명>
+main      발표·제출용. develop → main PR로만 합친다 (직접 push 불가)
+develop   작업 브랜치. 각자 바로 push 한다 (force push·삭제 불가)
+```
+
+```bash
+git switch develop
+git pull --rebase          # push 전에 항상 먼저 받기 (충돌을 줄인다)
+git add . && git commit -m "feat: 진행상태 변경 API 추가 (#12)"
+git push
 ```
 
 이슈 번호는 저장소마다 따로 매겨진다. 백엔드 작업은 `BE`, 화면 작업은 `FE`에 이슈를 연다.
@@ -324,15 +329,16 @@ fix/#<이슈번호>-<짧은설명>
 
 ### PR 규칙
 
-- 대상 브랜치는 `develop`이고, 리뷰어 1명이 승인하면 머지한다(제안서 7-3).
-- PR 제목은 커밋 규칙과 같게 쓰고, 본문에 이슈 번호를 넣는다(`Closes #12`).
+- PR은 `develop` → `main` 하나뿐이다. 기능이 모여 발표·제출할 만큼 안정되면 연다.
+- 리뷰어 1명이 승인해야 머지된다(제안서 7-3). 승인 뒤 새 커밋을 올리면 승인이 풀린다.
+- PR 본문에 이번에 들어가는 이슈 번호를 적는다(`Closes #12, #15`).
 - API를 바꾸는 PR은 API 명세(`API-` 저장소)도 같이 고친다.
 - 템플릿: `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/feature.md` (두 저장소에 같은 내용)
 
 GitHub 라벨: `feature`, `bug`, `docs`, `backend`, `frontend`, `priority-1`, `priority-2`.
-`main`, `develop` 브랜치 보호(직접 push 금지, PR 리뷰 1명 필수)를 두 저장소 모두 켠다.
+브랜치 보호(두 저장소 설정 완료): `main` — PR 필수·승인 1명·관리자도 예외 없음·force push/삭제 금지, `develop` — 직접 push 허용·force push/삭제 금지.
 
-**완료 기준**: 테스트 이슈 1개 → 브랜치 → PR → 리뷰 → `develop` 머지가 한 번 성공한다.
+**완료 기준**: `develop` push 1회 → `develop` → `main` PR → 리뷰 승인 → 머지가 한 번 성공한다.
 
 ---
 
@@ -352,7 +358,7 @@ GitHub 라벨: `feature`, `bug`, `docs`, `backend`, `frontend`, `priority-1`, `p
 ## 10. 초기 세팅 완료 체크리스트
 
 - [x] `BE`·`FE` 저장소에 뼈대 커밋, `develop` 브랜치
-- [ ] `main`·`develop` 브랜치 보호 (두 저장소)
+- [x] `main`·`develop` 브랜치 보호 (두 저장소)
 - [x] `.gitignore`, `.editorconfig`, `README.md`, `docs/SETUP.md`
 - [x] `docker compose up -d` → MySQL `next_siheung` 생성
 - [x] 백엔드 `GET /api/v1/health` 정상, Swagger 열림, 보호 경로 401
