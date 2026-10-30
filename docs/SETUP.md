@@ -171,9 +171,9 @@ cp src/main/resources/application-local.yml.example src/main/resources/applicati
 
 - `ApiResponse<T>(success, code, message, data)`: `ok(data)`, `ok()`, `fail(ErrorCode, data)`
 - `PageResponse<T>(content, page, size, totalElements, totalPages, hasNext)`: `of(Page)`
-- `ErrorCode`: 명세 "공통 에러 코드" 표 기준 17개(v1.3에서 ROADMAP_NOT_FOUND 추가). 도메인별 NOT_FOUND는 필요할 때 추가한다.
+- `ErrorCode`: 명세 "공통 에러 코드" 표 기준 17개(v1.3에서 ROADMAP_NOT_FOUND 추가) + `NOT_IMPLEMENTED`(501, 컨트롤러 뼈대용). 도메인별 NOT_FOUND는 필요할 때 추가한다.
   `POLICY_ENDED`는 422인데, Spring 7에서 `HttpStatus.UNPROCESSABLE_ENTITY`가 deprecated 되어 같은 값인 `UNPROCESSABLE_CONTENT`를 쓴다.
-- `GlobalExceptionHandler`: `BusinessException` → 해당 상태코드. 검증 실패 → 400 `INVALID_INPUT` + `data.errors[{field, reason}]`. 그 외 → 500 `INTERNAL_ERROR`.
+- `GlobalExceptionHandler`: `BusinessException` → 해당 상태코드. 검증 실패(본문 `@Valid`, 쿼리·경로 `@Min`·`@Max`, 타입·enum 값 오류, 필수 파라미터 누락, 읽을 수 없는 JSON) → 400 `INVALID_INPUT` + `data.errors[{field, reason}]`. 그 외 → 500 `INTERNAL_ERROR`.
 - `SecurityConfig`: 공개 경로는 `/api/v1/health`, `/api/v1/auth/**`, Swagger, GET `/api/v1/policies/**`·`/api/v1/posts/**`. `/api/v1/admin/**`은 ADMIN만 접근하고, 나머지는 인증이 필요하다. 인증이 없으면 401로 응답한다. JWT 필터는 6주차에 연결한다.
 
 ### 3-5. 공통 enum (`global/common/enums/`, 명세 "공통 enum" 표 그대로)
@@ -198,6 +198,23 @@ cp src/main/resources/application-local.yml.example src/main/resources/applicati
 | `Role` | USER, ADMIN |
 
 화면 표시명은 FE의 `src/constants/enumLabels.js`에 있다. JPA 엔티티에서는 항상 `@Enumerated(EnumType.STRING)`을 쓴다.
+
+### 3-5-1. API 뼈대와 Swagger (명세 v1.4, 54개)
+
+명세의 API 54개가 도메인별 컨트롤러로 이미 들어 있다. 메서드 몸통은 `throw new BusinessException(ErrorCode.NOT_IMPLEMENTED)`라서 호출하면 501을 돌려준다. 담당 API를 구현할 때는 이 한 줄을 서비스 호출로 바꾸면 된다.
+
+```
+domain/post/
+├── controller/PostApiDocs.java     Swagger 설명 (@Tag, @Operation, @ApiErrorCodes) + 검증(@Valid, @Min, @Max)
+├── controller/PostController.java  매핑(@GetMapping, @PathVariable, @RequestBody 등)과 몸통
+└── dto/                            요청·응답 record (@Schema 예시, 필드 검증 어노테이션)
+```
+
+- Swagger 설명은 `XxxApiDocs` 인터페이스에만 쓰고, 컨트롤러는 `implements XxxApiDocs` 한다.
+- **검증 어노테이션(`@Valid`, `@Min`, `@Max` 등)은 인터페이스 쪽 파라미터에만** 단다. 구현 메서드에 새로 달면 Hibernate Validator가 `HV000151`로 막아 500이 난다. Spring은 인터페이스 파라미터의 어노테이션도 읽으므로 본문 검증은 그대로 동작한다.
+- 에러 응답은 `@ApiErrorCodes({POLICY_NOT_FOUND, ...})`만 적으면 `SwaggerConfig`가 상태코드별 예시를 만든다. 공통 401·403은 문서 설명에 한 번만 적었다.
+- 로그인 없이 쓰는 API(명세 권한 `-`)는 `@SecurityRequirements`를 붙여 자물쇠를 뗀다.
+- 명세가 바뀌면 DTO·인터페이스를 같이 고친다.
 
 ### 3-6. 실행 확인
 
