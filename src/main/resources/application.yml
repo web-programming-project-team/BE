@@ -27,3 +27,8 @@ app:
     job-sync-cron: "0 0 4 * * *"             # 매일 04:00 고용24
     deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
     enabled: false                           # 키 발급 전까지 꺼 둠
+
+springdoc:
+  swagger-ui:
+    persist-authorization: true   # 새로고침해도 Authorize 토큰 유지
+    tags-sorter: alpha
