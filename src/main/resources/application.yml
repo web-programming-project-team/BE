@@ -24,7 +24,7 @@ app:
     refresh-token-validity-seconds: 1209600  # 14일
   batch:
     policy-sync-cron: "0 0 3 * * *"          # 매일 03:00 온통청년
-    job-sync-cron: "0 0 4 * * *"             # 매일 04:00 고용24
+    job-sync-cron: "0 0 4 * * *"             # 매일 04:00 사람인
     deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
     enabled: false                           # 키 발급 전까지 꺼 둠
 
