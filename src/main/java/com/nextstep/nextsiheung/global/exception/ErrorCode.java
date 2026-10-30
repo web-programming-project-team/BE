@@ -23,7 +23,9 @@ public enum ErrorCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입한 이메일입니다."),
     ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 항목입니다."),
     POLICY_ENDED(HttpStatus.UNPROCESSABLE_CONTENT, "종료된 정책입니다."),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    // 컨트롤러 뼈대만 있고 서비스가 아직 없는 API
+    NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "아직 구현되지 않은 API입니다.");
 
     private final HttpStatus status;
     private final String message;
