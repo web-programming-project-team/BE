@@ -15,4 +15,4 @@ app:
     secret: change-me-to-a-random-256-bit-base64-string
   external:
     ontong-api-key: ""
-    work24-api-key: ""
+    saramin-api-key: ""

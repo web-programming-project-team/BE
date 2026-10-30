@@ -17,6 +17,7 @@ public enum ErrorCode {
     POLICY_NOT_FOUND(HttpStatus.NOT_FOUND, "정책을 찾을 수 없습니다."),
     JOB_NOT_FOUND(HttpStatus.NOT_FOUND, "채용공고를 찾을 수 없습니다."),
     POST_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다."),
+    ROADMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵을 찾을 수 없습니다."),
     ROADMAP_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵 항목을 찾을 수 없습니다."),
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입한 이메일입니다."),
