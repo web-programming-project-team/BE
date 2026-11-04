@@ -7,8 +7,8 @@ public record BookmarkedJobResponse(
         @Schema(example = "5512") Long jobId,
         @Schema(example = "(주)시흥테크") String company,
         @Schema(example = "사무직 신입 채용") String title,
-        @Schema(example = "2026-11-01") LocalDate deadline,
-        @Schema(example = "7") Integer dDay,
+        @Schema(description = "마감일. 상시채용이면 null", example = "2026-11-01") LocalDate deadline,
+        @Schema(description = "마감까지 남은 일수. 상시채용이면 null", example = "7") Integer dDay,
         @Schema(description = "마감된 공고면 true", example = "false") boolean closed
 ) {
 }

@@ -15,4 +15,4 @@ app:
     secret: change-me-to-a-random-256-bit-base64-string
   external:
     ontong-api-key: ""
-    saramin-api-key: ""
+    gg-job-api-key: ""        # 경기데이터드림 인증키 (잡아바 채용정보 GGJOBABARECRUSTM)

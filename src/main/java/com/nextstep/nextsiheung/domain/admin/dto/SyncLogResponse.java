@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 // ERD sync_log 한 행
 public record SyncLogResponse(
         @Schema(example = "58") Long syncLogId,
-        @Schema(description = "ONTONG · SARAMIN", example = "SARAMIN") String source,
+        @Schema(description = "ONTONG · JOBABA", example = "JOBABA") String source,
         @Schema(example = "SCHEDULED") String triggerType,
         @Schema(description = "RUNNING · SUCCESS · FAILED", example = "SUCCESS") String status,
         @Schema(example = "214") int fetched,

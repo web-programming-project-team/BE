@@ -24,9 +24,12 @@ app:
     refresh-token-validity-seconds: 1209600  # 14일
   batch:
     policy-sync-cron: "0 0 3 * * *"          # 매일 03:00 온통청년
-    job-sync-cron: "0 0 4 * * *"             # 매일 04:00 사람인
+    job-sync-cron: "0 0 4 * * *"             # 매일 04:00 잡아바(경기데이터드림)
+    job-sync-page-size: 1000                 # 잡아바 1회 최대 1000건
+    job-sync-max-pages: 30                   # 최신(마지막) 페이지부터 거꾸로 최대 30페이지
     deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
     enabled: false                           # 키 발급 전까지 꺼 둠
+    job-sync-on-startup: false               # true면 서버 시작 시 잡아바 수집 1회 (로컬 테스트용)
 
 springdoc:
   swagger-ui:
