@@ -24,7 +24,7 @@ public interface AdminStatsApiDocs {
 
     @Operation(summary = "수집 기록 (2순위)", description = "스케줄러 자동 수집 결과를 최신순으로 보여준다(ERD sync_log). 수동 수집 API는 없다.")
     ApiResponse<PageResponse<SyncLogResponse>> syncLogs(
-            @Parameter(description = "ONTONG · SARAMIN") String source,
+            @Parameter(description = "ONTONG · JOBABA") String source,
             @Parameter(description = "페이지 (0부터)") @Min(0) int page,
             @Parameter(description = "페이지 크기 (최대 50)") @Min(1) @Max(50) int size);
 }

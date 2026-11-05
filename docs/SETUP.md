@@ -26,11 +26,11 @@
 | --- | --- |
 | 서비스 | 시흥시 19~24세 청년 사회진입 로드맵 웹서비스 |
 | 핵심 흐름 | 상태 등록 → 규칙 기반 로드맵 → 정책·프로그램 연결 → 진행상태 관리 → 캘린더·알림 |
-| 추가 기능 | 맞춤 채용공고(사람인), 경험 공유 커뮤니티, 알림 센터 |
+| 추가 기능 | 맞춤 채용공고(잡아바), 경험 공유 커뮤니티, 알림 센터 |
 | 프론트 | React (Vite) — `FE` 저장소 |
 | 백엔드 | Spring Boot REST API (JSON) — `BE` 저장소 |
 | DB | MySQL (로컬은 Docker, `BE`의 `docker-compose.yml`) |
-| 외부 데이터 | 온통청년 Open API(정책), 사람인 채용공고 API(공고) |
+| 외부 데이터 | 온통청년 Open API(정책), 경기데이터드림 잡아바 채용정보 API(공고) |
 | 배치 | Spring Scheduler (하루 1회 수집, 알림 생성) |
 
 ### 담당 (제안서 7장)
@@ -165,7 +165,7 @@ cp src/main/resources/application-local.yml.example src/main/resources/applicati
 # JWT 시크릿 생성 예: openssl rand -base64 32
 ```
 
-배치 시각: 03:00 온통청년 수집, 04:00 사람인 수집, 09:00 마감 알림.
+배치 시각: 03:00 온통청년 수집, 04:00 잡아바 수집, 09:00 마감 알림.
 
 ### 3-4. 공통 코드 (명세 v1.1 응답 형식)
 
@@ -189,7 +189,7 @@ cp src/main/resources/application-local.yml.example src/main/resources/applicati
 | `EmploymentType` | FULL_TIME, CONTRACT, INTERN, PART_TIME |
 | `RecruitStatus` | UPCOMING, OPEN, CLOSED, ENDED |
 | `PolicySource` | ONTONG, ADMIN |
-| `JobSource` | SARAMIN, ADMIN |
+| `JobSource` | JOBABA, ADMIN |
 | `PostType` | PASS_REVIEW, PROGRAM_REVIEW, PORTFOLIO |
 | `PrepPeriod` | WEEK_1, MONTH_1, MONTH_3, MONTH_6_PLUS |
 | `ReportReason` | PERSONAL_INFO, SPAM, ABUSE, FALSE_INFO, ETC |
@@ -365,7 +365,7 @@ GitHub 라벨: `feature`, `bug`, `docs`, `backend`, `frontend`, `priority-1`, `p
 | 데이터 | 신청처 | 설정 키 (`application-local.yml`) |
 | --- | --- | --- |
 | 청년정책 | 온통청년 Open API (회원가입 후 인증키 신청·심사) | `app.external.ontong-api-key` |
-| 채용공고 | 사람인 채용공고 API (인증키 신청·승인) | `app.external.saramin-api-key` |
+| 채용공고 | 경기데이터드림 「경기도일자리재단 잡아바 채용정보」 (GGJOBABARECRUSTM) | `app.external.gg-job-api-key` |
 
 - 키는 `application-local.yml`에만 넣는다. 팀 공유는 메신저 비공개 채팅으로 한다.
 - 승인 전에는 `app.batch.enabled: false`로 두고, 공개된 공고·정책 몇 건을 샘플 데이터로 넣어 개발한다(제안서 6-3).
@@ -386,7 +386,7 @@ GitHub 라벨: `feature`, `bug`, `docs`, `backend`, `frontend`, `priority-1`, `p
 - [x] 프론트 `/health`에서 백엔드 연결 확인
 - [x] PR·이슈 템플릿
 - [ ] 라벨, 테스트 PR 1회
-- [ ] 온통청년·사람인 인증키 신청 완료(승인 대기 가능)
+- [ ] 온통청년·경기데이터드림 인증키 신청 완료(승인 대기 가능)
 
 ---
 
@@ -398,7 +398,7 @@ GitHub 라벨: `feature`, `bug`, `docs`, `backend`, `frontend`, `priority-1`, `p
 | 7 | 정책 엔티티·목록·상세, 관리자 등록·수정·종료 (BE-데이터) | 정책 상세, 관리자 목록 |
 | 8 | 로드맵 템플릿·규칙 (BE-데이터) | 내 로드맵 메인 |
 | 9 | 진행상태·진행률·활동기록·캘린더 (팀장) | 진행상태 배지, 캘린더 (FE-테스트) |
-| 10 | 사람인 수집 스케줄러·조건 필터·정책 연결 (BE-데이터) | 맞춤 채용 (FE-UX) |
+| 10 | 잡아바 수집 스케줄러·조건 필터·정책 연결 (BE-데이터) | 맞춤 채용 (FE-UX) |
 | 11 | 커뮤니티·신고·알림 센터 (팀장) | 커뮤니티·알림 (FE-테스트) |
 | 12 | 통합·반응형·사용자 테스트 (전원) | |
 | 13 | 시연 데이터·발표 (전원) | |

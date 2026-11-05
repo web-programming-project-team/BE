@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
 public interface AdminJobApiDocs {
 
     @Operation(summary = "채용공고 등록 (2순위)", description = """
-            사람인 API 승인이 나지 않았거나 승인 전일 때 공고를 직접 넣는다. 저장된 공고는 source=ADMIN, created_by=관리자 ID로 맞춤 채용 목록에 수집 공고와 똑같이 나온다.
+            잡아바 수집 공고에 없는 지역 공고(시흥 프로그램 연계 등)나 시연용 공고를 직접 넣는다. 저장된 공고는 source=ADMIN, created_by=관리자 ID로 맞춤 채용 목록에 수집 공고와 똑같이 나온다.
             - region은 Region, education은 Education, employmentType은 EmploymentType, jobCategory는 JobCategory enum 값
             - source와 created_by는 서버가 채움""")
     @ApiErrorCodes({INVALID_INPUT})

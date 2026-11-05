@@ -17,13 +17,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 
-@Tag(name = "맞춤 채용", description = "사람인 수집 공고와 관리자 등록 공고(승인 전 시연용)를 사용자 조건으로 거른 목록과, 공고마다 도움 되는 정책 연결. 담당: 강준 · 10주차")
+@Tag(name = "맞춤 채용", description = "잡아바(경기도일자리재단) 수집 공고와 관리자 등록 공고를 사용자 조건으로 거른 목록과, 공고마다 도움 되는 정책 연결. 담당: 강준 · 10주차")
 public interface JobApiDocs {
 
     @Operation(summary = "맞춤 채용공고 목록 (2순위)", description = """
             저장된 채용 조건과 일치하는 공고를 돌려준다. 공고마다 '이 공고에 도움 되는 지원'과 그 정책의 내 진행상태가 붙어 온다.
             - isNew: 직전 방문일(user_visit) 이후 수집된 공고
-            - dataSource: 공고의 source 값(SARAMIN · ADMIN). 출처 표시 문구는 프론트에서 매핑""")
+            - dataSource: 공고의 source 값(JOBABA · ADMIN). 출처 표시 문구는 프론트에서 매핑""")
     @ApiErrorCodes({ONBOARDING_REQUIRED})
     ApiResponse<RecommendedJobsResponse> recommended(
             @Parameter(description = "deadline(기본) · latest") String sort,
