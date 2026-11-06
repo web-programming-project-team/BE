@@ -11,6 +11,8 @@ spring:
     show-sql: true
 
 app:
+  seed:
+    sample-data: true         # 샘플 정책 9건·로드맵 템플릿 4개 (템플릿 테이블이 비어 있을 때만)
   jwt:
     secret: change-me-to-a-random-256-bit-base64-string
   external:

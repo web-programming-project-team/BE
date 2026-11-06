@@ -2,6 +2,7 @@ package com.nextstep.nextsiheung.domain.policy.controller;
 
 import com.nextstep.nextsiheung.domain.policy.dto.PolicyDetailResponse;
 import com.nextstep.nextsiheung.domain.policy.dto.PolicySummaryResponse;
+import com.nextstep.nextsiheung.domain.policy.service.PolicyService;
 import com.nextstep.nextsiheung.domain.post.dto.PostSummaryResponse;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
 import com.nextstep.nextsiheung.global.common.enums.RecruitStatus;
@@ -9,6 +10,8 @@ import com.nextstep.nextsiheung.global.exception.BusinessException;
 import com.nextstep.nextsiheung.global.exception.ErrorCode;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
 import com.nextstep.nextsiheung.global.response.PageResponse;
+import com.nextstep.nextsiheung.global.security.CurrentUser;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,8 +19,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/policies")
 public class PolicyController implements PolicyApiDocs {
+
+    private final PolicyService policyService;
 
     @Override
     @GetMapping
@@ -28,15 +34,17 @@ public class PolicyController implements PolicyApiDocs {
             @RequestParam(defaultValue = "deadline") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(policyService.list(CurrentUser.idOrNull(), field, recruitStatus, keyword, sort,
+                page, size));
     }
 
     @Override
     @GetMapping("/{policyId}")
     public ApiResponse<PolicyDetailResponse> detail(@PathVariable Long policyId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(policyService.detail(CurrentUser.idOrNull(), policyId));
     }
 
+    // 커뮤니티(post) 담당 범위
     @Override
     @GetMapping("/{policyId}/reviews")
     public ApiResponse<PageResponse<PostSummaryResponse>> reviews(

@@ -3,11 +3,12 @@ package com.nextstep.nextsiheung.domain.calendar.controller;
 import com.nextstep.nextsiheung.domain.calendar.dto.CalendarEventCreateRequest;
 import com.nextstep.nextsiheung.domain.calendar.dto.CalendarEventResponse;
 import com.nextstep.nextsiheung.domain.calendar.dto.EventIdResponse;
+import com.nextstep.nextsiheung.domain.calendar.service.CalendarService;
 import com.nextstep.nextsiheung.global.common.enums.EventType;
-import com.nextstep.nextsiheung.global.exception.BusinessException;
-import com.nextstep.nextsiheung.global.exception.ErrorCode;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
+import com.nextstep.nextsiheung.global.security.CurrentUser;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,8 +21,11 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1/calendar/events")
 public class CalendarController implements CalendarApiDocs {
+
+    private final CalendarService calendarService;
 
     @Override
     @GetMapping
@@ -29,27 +33,27 @@ public class CalendarController implements CalendarApiDocs {
             @RequestParam int year,
             @RequestParam int month,
             @RequestParam(required = false) List<EventType> types) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(calendarService.monthly(CurrentUser.id(), year, month, types));
     }
 
     @Override
     @GetMapping("/upcoming")
     public ApiResponse<List<CalendarEventResponse>> upcoming(
             @RequestParam(defaultValue = "7") int days) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(calendarService.upcoming(CurrentUser.id(), days));
     }
 
     @Override
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<EventIdResponse> create(@RequestBody CalendarEventCreateRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(calendarService.create(CurrentUser.id(), request));
     }
 
     @Override
     @DeleteMapping("/{eventId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long eventId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        calendarService.delete(CurrentUser.id(), eventId);
     }
 }
