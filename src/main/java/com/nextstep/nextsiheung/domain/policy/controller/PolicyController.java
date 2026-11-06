@@ -4,10 +4,9 @@ import com.nextstep.nextsiheung.domain.policy.dto.PolicyDetailResponse;
 import com.nextstep.nextsiheung.domain.policy.dto.PolicySummaryResponse;
 import com.nextstep.nextsiheung.domain.policy.service.PolicyService;
 import com.nextstep.nextsiheung.domain.post.dto.PostSummaryResponse;
+import com.nextstep.nextsiheung.domain.post.service.PostService;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
 import com.nextstep.nextsiheung.global.common.enums.RecruitStatus;
-import com.nextstep.nextsiheung.global.exception.BusinessException;
-import com.nextstep.nextsiheung.global.exception.ErrorCode;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
 import com.nextstep.nextsiheung.global.response.PageResponse;
 import com.nextstep.nextsiheung.global.security.CurrentUser;
@@ -24,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PolicyController implements PolicyApiDocs {
 
     private final PolicyService policyService;
+    private final PostService postService;
 
     @Override
     @GetMapping
@@ -44,13 +44,12 @@ public class PolicyController implements PolicyApiDocs {
         return ApiResponse.ok(policyService.detail(CurrentUser.idOrNull(), policyId));
     }
 
-    // 커뮤니티(post) 담당 범위
     @Override
     @GetMapping("/{policyId}/reviews")
     public ApiResponse<PageResponse<PostSummaryResponse>> reviews(
             @PathVariable Long policyId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.policyReviews(policyId, CurrentUser.idOrNull(), page, size));
     }
 }
