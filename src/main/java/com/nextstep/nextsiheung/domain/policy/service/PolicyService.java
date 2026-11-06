@@ -1,5 +1,6 @@
 package com.nextstep.nextsiheung.domain.policy.service;
 
+import com.nextstep.nextsiheung.domain.job.repository.JobPolicyMatchRepository;
 import com.nextstep.nextsiheung.domain.policy.dto.PolicyDetailResponse;
 import com.nextstep.nextsiheung.domain.policy.dto.PolicySummaryResponse;
 import com.nextstep.nextsiheung.domain.policy.entity.Policy;
@@ -31,9 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class PolicyService {
 
     static final int MAX_PAGE_SIZE = 50;
+    private static final int RELATED_JOB_LIMIT = 2;
 
     private final PolicyRepository policyRepository;
     private final RoadmapItemRepository roadmapItemRepository;
+    private final JobPolicyMatchRepository jobPolicyMatchRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<PolicySummaryResponse> list(Long userIdOrNull, InterestField field,
@@ -63,11 +66,19 @@ public class PolicyService {
                         .map(i -> new PolicyDetailResponse.MyItem(i.getId(), i.getStatus()))
                         .orElse(null);
         // TODO(커뮤니티): post 엔티티가 생기면 관련 후기 최신 3개와 개수를 채운다
-        // TODO(채용): job_policy_match 엔티티가 생기면 연결 채용공고 최대 2개를 채운다
         return new PolicyDetailResponse(p.getId(), p.getTitle(), p.getField(), p.getAgency(), p.getTarget(),
                 p.getContent(), p.getApplyStartDate(), p.getApplyEndDate(), Kst.dDay(p.getApplyEndDate()),
                 p.currentStatus(Kst.today()), p.getContact(), p.getSource(), p.getSourceUrl(), p.getApplyUrl(),
-                p.getLastVerifiedAt(), myItem, List.of(), 0, List.of());
+                p.getLastVerifiedAt(), myItem, List.of(), 0, relatedJobs(policyId));
+    }
+
+    // 연결 채용공고 최대 2개 (job_policy_match, 접수 중인 공고만 마감 임박순)
+    private List<PolicyDetailResponse.RelatedJob> relatedJobs(Long policyId) {
+        return jobPolicyMatchRepository.findOpenJobs(policyId, Kst.today(), PageRequest.of(0, RELATED_JOB_LIMIT))
+                .stream()
+                .map(j -> new PolicyDetailResponse.RelatedJob(j.getId(), j.getCompany(), j.getTitle(),
+                        Kst.dDay(j.getDeadline())))
+                .toList();
     }
 
     private Map<Long, ProgressStatus> myStatuses(Long userIdOrNull, List<Policy> policies) {

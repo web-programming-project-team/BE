@@ -3,7 +3,9 @@ package com.nextstep.nextsiheung.domain.batch.service;
 import com.nextstep.nextsiheung.domain.batch.dto.JobSyncResult;
 import com.nextstep.nextsiheung.domain.batch.dto.JobabaRow;
 import com.nextstep.nextsiheung.domain.job.entity.JobPosting;
+import com.nextstep.nextsiheung.domain.job.service.JobPolicyMatchService;
 import com.nextstep.nextsiheung.domain.job.service.JobPostingUpsertService;
+import com.nextstep.nextsiheung.domain.notification.service.NewJobNotificationService;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -25,15 +27,21 @@ public class JobSyncService {
     private final JobabaClient jobabaClient;
     private final JobabaMapper jobabaMapper;
     private final JobPostingUpsertService upsertService;
+    private final JobPolicyMatchService jobPolicyMatchService;
+    private final NewJobNotificationService newJobNotificationService;
     private final int pageSize;
     private final int maxPages;
 
     public JobSyncService(JobabaClient jobabaClient, JobabaMapper jobabaMapper, JobPostingUpsertService upsertService,
+                          JobPolicyMatchService jobPolicyMatchService,
+                          NewJobNotificationService newJobNotificationService,
                           @Value("${app.batch.job-sync-page-size:1000}") int pageSize,
                           @Value("${app.batch.job-sync-max-pages:30}") int maxPages) {
         this.jobabaClient = jobabaClient;
         this.jobabaMapper = jobabaMapper;
         this.upsertService = upsertService;
+        this.jobPolicyMatchService = jobPolicyMatchService;
+        this.newJobNotificationService = newJobNotificationService;
         this.pageSize = pageSize;
         this.maxPages = maxPages;
     }
@@ -83,6 +91,21 @@ public class JobSyncService {
         JobSyncResult result = new JobSyncResult(pages, fetched, open, matched, inserted, updated,
                 System.currentTimeMillis() - startedAt);
         log.info("[잡아바 수집] 끝: {}", result);
+        afterSync();
         return result;
+    }
+
+    // 수집이 끝나면 공고-정책 매칭을 다시 계산하고 새 맞춤 공고 알림을 보낸다. 실패해도 수집 결과는 그대로 둔다
+    private void afterSync() {
+        try {
+            jobPolicyMatchService.rebuildAll();
+        } catch (RuntimeException e) {
+            log.error("[공고-정책 매칭] 수집 후 계산 실패", e);
+        }
+        try {
+            newJobNotificationService.sendAfterSync();
+        } catch (RuntimeException e) {
+            log.error("[새 맞춤 공고 알림] 실패", e);
+        }
     }
 }

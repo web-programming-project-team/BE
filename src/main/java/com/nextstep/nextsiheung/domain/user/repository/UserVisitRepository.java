@@ -13,4 +13,8 @@ public interface UserVisitRepository extends JpaRepository<UserVisit, UserVisit.
     @Modifying
     @Query(value = "INSERT IGNORE INTO user_visit (user_id, visit_date) VALUES (:userId, :visitDate)", nativeQuery = true)
     int insertIgnore(@Param("userId") Long userId, @Param("visitDate") LocalDate visitDate);
+
+    // 직전 방문일: 기준일 이전 가장 최근 visit_date (없으면 null). isNew·새 맞춤 공고 판단에 쓴다
+    @Query("select max(v.id.visitDate) from UserVisit v where v.id.userId = :userId and v.id.visitDate < :before")
+    LocalDate findLastVisitBefore(@Param("userId") Long userId, @Param("before") LocalDate before);
 }

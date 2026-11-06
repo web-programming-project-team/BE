@@ -2,6 +2,8 @@ package com.nextstep.nextsiheung.domain.roadmap.service;
 
 import com.nextstep.nextsiheung.domain.calendar.repository.CalendarEventRepository;
 import com.nextstep.nextsiheung.domain.calendar.service.CalendarService;
+import com.nextstep.nextsiheung.domain.job.service.JobService;
+import com.nextstep.nextsiheung.domain.notification.service.NotificationService;
 import com.nextstep.nextsiheung.domain.policy.entity.Policy;
 import com.nextstep.nextsiheung.domain.policy.repository.PolicyRepository;
 import com.nextstep.nextsiheung.domain.roadmap.dto.HomeSummaryResponse;
@@ -62,6 +64,8 @@ public class RoadmapService {
     private final PolicyRepository policyRepository;
     private final CalendarService calendarService;
     private final CalendarEventRepository calendarEventRepository;
+    private final JobService jobService;
+    private final NotificationService notificationService;
 
     // ───────── 생성 ─────────
 
@@ -215,10 +219,9 @@ public class RoadmapService {
                         Kst.dDay(e.getDate()), e.getSourceType(), e.sourceId()))
                 .toList();
 
-        // TODO(채용): 직전 방문일 이후 조건에 맞는 새 공고 수 (GET /jobs/recommended의 isNew와 같은 기준)
-        int newJobCount = 0;
-        // TODO(알림): notification 엔티티가 생기면 안 읽은 알림 수
-        int unreadNotificationCount = 0;
+        // 직전 방문일 이후 조건에 맞는 새 공고 수 (GET /jobs/recommended의 isNew와 같은 기준)
+        int newJobCount = jobService.countNewMatches(userId);
+        int unreadNotificationCount = (int) notificationService.countUnread(userId);
 
         return new HomeSummaryResponse(user.getNickname(), List.copyOf(user.getLifeStages()),
                 List.copyOf(user.getInterests()), progress(roadmap), nextActions, deadlines, newJobCount,

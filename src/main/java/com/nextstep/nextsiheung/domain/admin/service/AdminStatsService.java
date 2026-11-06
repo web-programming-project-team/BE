@@ -4,6 +4,7 @@ import com.nextstep.nextsiheung.domain.admin.dto.StatsResponse;
 import com.nextstep.nextsiheung.domain.admin.dto.SyncLogResponse;
 import com.nextstep.nextsiheung.domain.batch.entity.SyncLog;
 import com.nextstep.nextsiheung.domain.batch.repository.SyncLogRepository;
+import com.nextstep.nextsiheung.domain.job.repository.JobBookmarkRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.global.common.Kst;
 import com.nextstep.nextsiheung.global.exception.BusinessException;
@@ -30,6 +31,7 @@ public class AdminStatsService {
 
     private final RoadmapItemRepository roadmapItemRepository;
     private final SyncLogRepository syncLogRepository;
+    private final JobBookmarkRepository jobBookmarkRepository;
     private final JdbcTemplate jdbc;
 
     // 기간 기본값: 오늘까지 최근 7일
@@ -47,8 +49,8 @@ public class AdminStatsService {
                 .map(row -> new StatsResponse.TopProgram((Long) row[0], (String) row[1], (Long) row[2], 0))
                 .toList();
 
-        // TODO(채용): job_bookmark 엔티티가 생기면 기간 안 관심 공고 저장 수
-        long bookmarkedJobCount = 0;
+        long bookmarkedJobCount = jobBookmarkRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                start.atStartOfDay(), end.plusDays(1).atStartOfDay());
         // TODO(커뮤니티): post 엔티티가 생기면 기간 안 후기 작성 수
         long reviewCount = 0;
 

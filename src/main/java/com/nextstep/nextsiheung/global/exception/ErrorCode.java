@@ -20,6 +20,7 @@ public enum ErrorCode {
     ROADMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵을 찾을 수 없습니다."),
     ROADMAP_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵 항목을 찾을 수 없습니다."),
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다."),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입한 이메일입니다."),
     ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 항목입니다."),
     POLICY_ENDED(HttpStatus.UNPROCESSABLE_CONTENT, "종료된 정책입니다."),

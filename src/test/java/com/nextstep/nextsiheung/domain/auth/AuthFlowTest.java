@@ -101,10 +101,10 @@ class AuthFlowTest {
 
     @Test
     void 로그인_선택_API와_재발급은_만료된_토큰이_붙어도_통과한다() throws Exception {
-        // GET /jobs/{jobId}는 명세 권한 U? → 인증 단계에서 막히지 않고 컨트롤러까지 간다 (아직 501)
-        mvc.perform(get("/api/v1/jobs/1")).andExpect(status().isNotImplemented());
-        mvc.perform(get("/api/v1/jobs/1").header("Authorization", bearer(expiredToken())))
-                .andExpect(status().isNotImplemented());
+        // GET /jobs/{jobId}는 명세 권한 U? → 인증 단계에서 막히지 않고 컨트롤러까지 간다 (없는 공고라 404 JOB_NOT_FOUND)
+        mvc.perform(get("/api/v1/jobs/999999999")).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/jobs/999999999").header("Authorization", bearer(expiredToken())))
+                .andExpect(status().isNotFound());
         mvc.perform(get("/api/v1/jobs/recommended")).andExpect(status().isUnauthorized());
 
         signup("refresh-expired@test.kr");
