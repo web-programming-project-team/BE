@@ -30,6 +30,8 @@ app:
     deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
     enabled: false                           # 키 발급 전까지 꺼 둠
     job-sync-on-startup: false               # true면 서버 시작 시 잡아바 수집 1회 (로컬 테스트용)
+  seed:
+    sample-data: false                       # true면 템플릿이 없을 때 샘플 정책·로드맵 템플릿을 넣음 (로컬·시연용)
 
 springdoc:
   swagger-ui:

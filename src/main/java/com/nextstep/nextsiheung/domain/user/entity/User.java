@@ -1,6 +1,7 @@
 package com.nextstep.nextsiheung.domain.user.entity;
 
 import com.nextstep.nextsiheung.global.common.BaseTimeEntity;
+import com.nextstep.nextsiheung.global.common.enums.InterestField;
 import com.nextstep.nextsiheung.global.common.enums.LifeStage;
 import com.nextstep.nextsiheung.global.common.enums.Role;
 import jakarta.persistence.CollectionTable;
@@ -16,7 +17,8 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -63,12 +65,19 @@ public class User extends BaseTimeEntity {
 
     private LocalDateTime lastLoginAt;
 
-    // ERD user_life_stage. 현재 상황(복수). 커뮤니티 작성자 상황·같은 상황 필터에서 읽는다
+    // ERD user_life_stage. 온보딩·상황 변경에서 받는 현재 상황 (복수)
     @ElementCollection
     @CollectionTable(name = "user_life_stage", joinColumns = @JoinColumn(name = "user_id"))
     @Enumerated(EnumType.STRING)
-    @Column(name = "life_stage", length = 30, nullable = false)
-    private Set<LifeStage> lifeStages = new HashSet<>();
+    @Column(name = "life_stage", nullable = false, length = 30)
+    private Set<LifeStage> lifeStages = new LinkedHashSet<>();
+
+    // ERD user_interest. 관심분야 (복수)
+    @ElementCollection
+    @CollectionTable(name = "user_interest", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "interest_field", nullable = false, length = 30)
+    private Set<InterestField> interests = new LinkedHashSet<>();
 
     @Builder
     private User(String email, String password, String nickname, Integer birthYear, Role role,
@@ -86,12 +95,14 @@ public class User extends BaseTimeEntity {
         this.lastLoginAt = now;
     }
 
-    public void changeLifeStages(Set<LifeStage> lifeStages) {
-        this.lifeStages.clear();
-        this.lifeStages.addAll(lifeStages);
-    }
-
     public void completeOnboarding() {
         this.onboardingCompleted = true;
+    }
+
+    public void changeStatus(Collection<LifeStage> lifeStages, Collection<InterestField> interests) {
+        this.lifeStages.clear();
+        this.lifeStages.addAll(lifeStages);
+        this.interests.clear();
+        this.interests.addAll(interests);
     }
 }

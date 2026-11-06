@@ -15,7 +15,6 @@ import com.nextstep.nextsiheung.domain.user.repository.UserRepository;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
 import com.nextstep.nextsiheung.global.common.enums.LifeStage;
 import com.nextstep.nextsiheung.global.common.enums.PolicySource;
-import com.nextstep.nextsiheung.global.common.enums.RecruitStatus;
 import com.nextstep.nextsiheung.global.common.enums.Role;
 import com.nextstep.nextsiheung.global.security.JwtProvider;
 import java.time.LocalDate;
@@ -59,9 +58,9 @@ class PostFlowTest {
     void setUp() {
         policyId = policyRepository.save(Policy.builder()
                 .source(PolicySource.ADMIN).title("청년 직무역량 아카데미").field(InterestField.EMPLOYMENT)
-                .agency("시흥시").target("19~24세").content("직무 교육").recruitStatus(RecruitStatus.OPEN)
+                .agency("시흥시").target("19~24세").content("직무 교육")
                 .sourceUrl("https://example.kr").applyUrl("https://example.kr/apply")
-                .lastVerifiedAt(LocalDate.of(2026, 11, 1)).build()).getId();
+                .today(LocalDate.of(2026, 11, 1)).build()).getId();
         author = token(LifeStage.GRADUATING);
     }
 
@@ -287,7 +286,7 @@ class PostFlowTest {
                 .email(UUID.randomUUID().toString().substring(0, 12) + "@post.test")
                 .password("x").nickname("tester").role(role).agreeTerms(true).agreePrivacy(true)
                 .build();
-        user.changeLifeStages(Set.of(stages));
+        user.changeStatus(Set.of(stages), Set.of());
         return userRepository.saveAndFlush(user);
     }
 
