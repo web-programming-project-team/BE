@@ -123,6 +123,32 @@ public class JobPosting {
         this.closed = true;
     }
 
+    public boolean isAdminPosted() {
+        return source == JobSource.ADMIN;
+    }
+
+    // 관리자 마감이거나 마감일이 지났으면 마감 (상시채용은 관리자 마감만)
+    public boolean isClosedOn(LocalDate today) {
+        return closed || (deadline != null && deadline.isBefore(today));
+    }
+
+    // 관리자 공고 수정(PUT, 본문 전체 교체). source·createdBy·collectedAt·closed는 그대로 둔다
+    public void updateByAdmin(String company, String title, Region region, String address, Education education,
+                              String careerLevel, EmploymentType employmentType, JobCategory jobCategory,
+                              String salary, LocalDate deadline, String originalUrl) {
+        this.company = company;
+        this.title = title;
+        this.region = region;
+        this.address = address;
+        this.education = education;
+        this.careerLevel = careerLevel;
+        this.employmentType = employmentType;
+        this.jobCategory = jobCategory;
+        this.salary = salary;
+        this.deadline = deadline;
+        this.originalUrl = originalUrl;
+    }
+
     // 다시 수집된 공고의 내용으로 갱신한다. collectedAt(최초 수집 일시)은 isNew 판단용, closed는 관리자 처리라 유지
     public void refreshFrom(JobPosting latest) {
         this.company = latest.company;

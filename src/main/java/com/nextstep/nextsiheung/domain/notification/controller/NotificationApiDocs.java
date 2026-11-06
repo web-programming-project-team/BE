@@ -1,10 +1,14 @@
 package com.nextstep.nextsiheung.domain.notification.controller;
 
+import static com.nextstep.nextsiheung.global.exception.ErrorCode.FORBIDDEN;
+import static com.nextstep.nextsiheung.global.exception.ErrorCode.NOTIFICATION_NOT_FOUND;
+
 import com.nextstep.nextsiheung.domain.notification.dto.NotificationResponse;
 import com.nextstep.nextsiheung.domain.notification.dto.ReadAllResponse;
 import com.nextstep.nextsiheung.domain.notification.dto.ReadResponse;
 import com.nextstep.nextsiheung.domain.notification.dto.UnreadCountResponse;
 import com.nextstep.nextsiheung.global.common.enums.NotificationType;
+import com.nextstep.nextsiheung.global.exception.ApiErrorCodes;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
 import com.nextstep.nextsiheung.global.response.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,7 +29,8 @@ public interface NotificationApiDocs {
     @Operation(summary = "안 읽은 알림 수 (2순위)", description = "헤더 빨간 점 숫자. 화면 이동 시마다 가볍게 호출한다.")
     ApiResponse<UnreadCountResponse> unreadCount();
 
-    @Operation(summary = "알림 읽음 처리 (2순위)", description = "알림을 눌러 이동할 때 호출한다.")
+    @Operation(summary = "알림 읽음 처리 (2순위)", description = "알림을 눌러 이동할 때 호출한다. 다른 사람 알림이면 FORBIDDEN.")
+    @ApiErrorCodes({NOTIFICATION_NOT_FOUND, FORBIDDEN})
     ApiResponse<ReadResponse> read(@Parameter(description = "알림 ID") Long notificationId);
 
     @Operation(summary = "모두 읽음 (2순위)")

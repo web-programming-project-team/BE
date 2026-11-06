@@ -4,6 +4,7 @@ import com.nextstep.nextsiheung.domain.admin.dto.StatsResponse;
 import com.nextstep.nextsiheung.domain.admin.dto.SyncLogResponse;
 import com.nextstep.nextsiheung.domain.batch.entity.SyncLog;
 import com.nextstep.nextsiheung.domain.batch.repository.SyncLogRepository;
+import com.nextstep.nextsiheung.domain.job.repository.JobBookmarkRepository;
 import com.nextstep.nextsiheung.domain.post.repository.PostRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.global.common.Kst;
@@ -34,6 +35,7 @@ public class AdminStatsService {
 
     private final RoadmapItemRepository roadmapItemRepository;
     private final SyncLogRepository syncLogRepository;
+    private final JobBookmarkRepository jobBookmarkRepository;
     private final PostRepository postRepository;
     private final JdbcTemplate jdbc;
 
@@ -59,8 +61,8 @@ public class AdminStatsService {
                         reviewCounts.getOrDefault((Long) row[0], 0L)))
                 .toList();
 
-        // TODO(채용): job_bookmark 엔티티가 생기면 기간 안 관심 공고 저장 수
-        long bookmarkedJobCount = 0;
+        long bookmarkedJobCount = jobBookmarkRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                start.atStartOfDay(), end.plusDays(1).atStartOfDay());
         // 기간 안 후기(합격·참여 후기) 작성 수. 포트폴리오는 후기가 아니라 뺀다
         long reviewCount = postRepository.countByTypeInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                 Set.of(PostType.PASS_REVIEW, PostType.PROGRAM_REVIEW),
