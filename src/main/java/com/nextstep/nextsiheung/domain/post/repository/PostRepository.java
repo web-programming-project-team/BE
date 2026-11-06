@@ -4,7 +4,9 @@ import com.nextstep.nextsiheung.domain.post.entity.Post;
 import com.nextstep.nextsiheung.global.common.enums.JobCategory;
 import com.nextstep.nextsiheung.global.common.enums.LifeStage;
 import com.nextstep.nextsiheung.global.common.enums.PostType;
+import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -50,6 +52,22 @@ public interface PostRepository extends JpaRepository<Post, Long> {
                              @Param("filterStage") boolean filterStage,
                              @Param("stages") Collection<LifeStage> stages,
                              Pageable pageable);
+
+    // 정책 상세의 관련 후기 최신 3개 (삭제·숨김 제외)
+    List<Post> findTop3ByPolicyIdAndDeletedAtIsNullAndHiddenFalseOrderByCreatedAtDescIdDesc(Long policyId);
+
+    long countByPolicyIdAndDeletedAtIsNullAndHiddenFalse(Long policyId);
+
+    // 운영 지표의 프로그램별 후기 수. [policyId, count] (삭제·숨김 제외)
+    @Query("""
+            select p.policyId, count(p) from Post p
+            where p.policyId in :policyIds and p.deletedAt is null and p.hidden = false
+            group by p.policyId""")
+    List<Object[]> countVisibleByPolicyIds(@Param("policyIds") Collection<Long> policyIds);
+
+    // 운영 지표의 기간 안 후기 작성 수. 작성 활동 지표라 이후 삭제·숨김된 글도 센다
+    long countByTypeInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Collection<PostType> types,
+                                                                       LocalDateTime from, LocalDateTime to);
 
     // 내가 쓴 글. 숨김 글도 포함
     @Query("""
