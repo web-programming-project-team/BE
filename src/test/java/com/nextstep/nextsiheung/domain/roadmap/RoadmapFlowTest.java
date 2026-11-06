@@ -132,11 +132,15 @@ class RoadmapFlowTest {
         // 프로필 조회와 채용 조건 부분 수정
         mvc.perform(get("/api/v1/users/me/profile").header("Authorization", token))
                 .andExpect(jsonPath("$.data.lifeStages", hasSize(3)))
+                .andExpect(jsonPath("$.data.lifeStages[0]").value("GRADUATING"))
+                .andExpect(jsonPath("$.data.lifeStages[1]").value("ON_LEAVE"))
                 .andExpect(jsonPath("$.data.jobPreference.education").value("UNIVERSITY"));
         mvc.perform(patch("/api/v1/users/me/job-preference").header("Authorization", token)
-                        .contentType(MediaType.APPLICATION_JSON).content("{\"regions\":[\"SIHEUNG\",\"ANSAN\"]}"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"regions\":[\"ANSAN\",\"SIHEUNG\"]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.regions", hasSize(2)))
+                // 복수 값은 보낸 순서·DB 순서와 상관없이 enum 선언 순서로 온다 (시흥 → 안산)
+                .andExpect(jsonPath("$.data.regions[0]").value("SIHEUNG"))
                 .andExpect(jsonPath("$.data.jobCategories[0]").value("IT"));
 
         // 진행상태: COMPLETED로 바뀔 때만 후기 제안
