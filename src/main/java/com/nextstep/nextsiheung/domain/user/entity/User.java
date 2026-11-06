@@ -1,17 +1,23 @@
 package com.nextstep.nextsiheung.domain.user.entity;
 
 import com.nextstep.nextsiheung.global.common.BaseTimeEntity;
+import com.nextstep.nextsiheung.global.common.enums.LifeStage;
 import com.nextstep.nextsiheung.global.common.enums.Role;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -57,6 +63,13 @@ public class User extends BaseTimeEntity {
 
     private LocalDateTime lastLoginAt;
 
+    // ERD user_life_stage. 현재 상황(복수). 커뮤니티 작성자 상황·같은 상황 필터에서 읽는다
+    @ElementCollection
+    @CollectionTable(name = "user_life_stage", joinColumns = @JoinColumn(name = "user_id"))
+    @Enumerated(EnumType.STRING)
+    @Column(name = "life_stage", length = 30, nullable = false)
+    private Set<LifeStage> lifeStages = new HashSet<>();
+
     @Builder
     private User(String email, String password, String nickname, Integer birthYear, Role role,
                  boolean agreeTerms, boolean agreePrivacy) {
@@ -71,6 +84,11 @@ public class User extends BaseTimeEntity {
 
     public void recordLogin(LocalDateTime now) {
         this.lastLoginAt = now;
+    }
+
+    public void changeLifeStages(Set<LifeStage> lifeStages) {
+        this.lifeStages.clear();
+        this.lifeStages.addAll(lifeStages);
     }
 
     public void completeOnboarding() {

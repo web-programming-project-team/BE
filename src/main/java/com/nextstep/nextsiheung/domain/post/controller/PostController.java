@@ -9,12 +9,15 @@ import com.nextstep.nextsiheung.domain.post.dto.PostSummaryResponse;
 import com.nextstep.nextsiheung.domain.post.dto.PostUpdateRequest;
 import com.nextstep.nextsiheung.domain.post.dto.ReportRequest;
 import com.nextstep.nextsiheung.domain.post.dto.ReportResponse;
+import com.nextstep.nextsiheung.domain.post.service.PostLikeService;
+import com.nextstep.nextsiheung.domain.post.service.PostReportService;
+import com.nextstep.nextsiheung.domain.post.service.PostService;
 import com.nextstep.nextsiheung.global.common.enums.JobCategory;
 import com.nextstep.nextsiheung.global.common.enums.PostType;
-import com.nextstep.nextsiheung.global.exception.BusinessException;
-import com.nextstep.nextsiheung.global.exception.ErrorCode;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
 import com.nextstep.nextsiheung.global.response.PageResponse;
+import com.nextstep.nextsiheung.global.security.CurrentUser;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +31,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/v1")
 public class PostController implements PostApiDocs {
+
+    private final PostService postService;
+    private final PostLikeService postLikeService;
+    private final PostReportService postReportService;
 
     @Override
     @GetMapping("/posts")
@@ -41,33 +49,34 @@ public class PostController implements PostApiDocs {
             @RequestParam(required = false) Boolean sameStage,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.list(type, policyId, jobId, jobCategory, Boolean.TRUE.equals(sameStage),
+                CurrentUser.idOrNull(), page, size));
     }
 
     @Override
     @GetMapping("/posts/{postId}")
     public ApiResponse<PostDetailResponse> detail(@PathVariable Long postId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.detail(postId, CurrentUser.idOrNull()));
     }
 
     @Override
     @PostMapping("/posts")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<PostIdResponse> create(@RequestBody PostCreateRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.create(CurrentUser.id(), request));
     }
 
     @Override
     @PatchMapping("/posts/{postId}")
     public ApiResponse<PostIdResponse> update(@PathVariable Long postId, @RequestBody PostUpdateRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.update(CurrentUser.id(), postId, request));
     }
 
     @Override
     @DeleteMapping("/posts/{postId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(@PathVariable Long postId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        postService.delete(CurrentUser.id(), postId);
     }
 
     @Override
@@ -76,26 +85,26 @@ public class PostController implements PostApiDocs {
             @RequestParam(required = false) PostType type,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postService.myPosts(CurrentUser.id(), type, page, size));
     }
 
     @Override
     @PostMapping("/posts/{postId}/reports")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<ReportResponse> report(@PathVariable Long postId, @RequestBody ReportRequest request) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postReportService.report(CurrentUser.id(), postId, request));
     }
 
     @Override
     @PostMapping("/posts/{postId}/likes")
     @ResponseStatus(HttpStatus.CREATED)
     public ApiResponse<LikeResponse> like(@PathVariable Long postId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postLikeService.like(CurrentUser.id(), postId));
     }
 
     @Override
     @DeleteMapping("/posts/{postId}/likes")
     public ApiResponse<LikeResponse> unlike(@PathVariable Long postId) {
-        throw new BusinessException(ErrorCode.NOT_IMPLEMENTED);
+        return ApiResponse.ok(postLikeService.unlike(CurrentUser.id(), postId));
     }
 }
