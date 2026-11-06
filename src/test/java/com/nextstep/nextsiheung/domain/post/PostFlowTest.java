@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.nextstep.nextsiheung.domain.policy.entity.Policy;
 import com.nextstep.nextsiheung.domain.policy.repository.PolicyRepository;
+import com.nextstep.nextsiheung.domain.post.repository.PostRepository;
 import com.nextstep.nextsiheung.domain.user.entity.User;
 import com.nextstep.nextsiheung.domain.user.repository.UserRepository;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
@@ -18,6 +19,7 @@ import com.nextstep.nextsiheung.global.common.enums.PolicySource;
 import com.nextstep.nextsiheung.global.common.enums.Role;
 import com.nextstep.nextsiheung.global.security.JwtProvider;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +52,8 @@ class PostFlowTest {
     UserRepository userRepository;
     @Autowired
     PolicyRepository policyRepository;
+    @Autowired
+    PostRepository postRepository;
 
     Long policyId;
     String author;
@@ -267,6 +271,53 @@ class PostFlowTest {
                 .andExpect(jsonPath("$.data.content[0].autoHidden").value(false));
         mvc.perform(get("/api/v1/admin/reports").param("status", "NOPE").header("Authorization", bearer(admin)))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void 정책_상세에_최근_후기_3개와_후기_수가_나온다() throws Exception {
+        for (int i = 1; i <= 4; i++) {
+            createReview(author, "후기 " + i);
+        }
+        Long hiddenPost = createReview(author, "숨겨질 후기");
+        mvc.perform(patch("/api/v1/admin/posts/{id}/visibility", hiddenPost).header("Authorization", bearer(adminToken()))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"hidden\":true}"))
+                .andExpect(status().isOk());
+
+        mvc.perform(get("/api/v1/policies/{id}", policyId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.reviewCount").value(4))
+                .andExpect(jsonPath("$.data.reviews.length()").value(3))
+                .andExpect(jsonPath("$.data.reviews[0].oneLiner").value("후기 4"))
+                .andExpect(jsonPath("$.data.reviews[0].authorStage").value("GRADUATING"))
+                .andExpect(jsonPath("$.data.reviews[2].oneLiner").value("후기 2"));
+
+        // 운영 지표 topPrograms의 정책별 후기 수 (숨김 제외)
+        List<Object[]> counts = postRepository.countVisibleByPolicyIds(List.of(policyId));
+        assertThat(counts).hasSize(1);
+        assertThat((Long) counts.get(0)[1]).isEqualTo(4L);
+    }
+
+    @Test
+    void 운영_지표의_후기_작성_수는_기간_안_합격_참여_후기만_센다() throws Exception {
+        String admin = adminToken();
+        long before = reviewCountToday(admin);
+
+        createReview(author, "참여 후기");
+        write(author, """
+                {"type":"PASS_REVIEW","jobCategory":"OFFICE","rating":4,"oneLiner":"합격했어요","prepPeriod":"MONTH_1"}""")
+                .andExpect(status().isCreated());
+        write(author, """
+                {"type":"PORTFOLIO","oneLiner":"포트폴리오","prepPeriod":"MONTH_3","portfolioUrl":"https://notion.so/me"}""")
+                .andExpect(status().isCreated());
+
+        assertThat(reviewCountToday(admin) - before).isEqualTo(2);
+    }
+
+    private long reviewCountToday(String adminToken) throws Exception {
+        String body = mvc.perform(get("/api/v1/admin/stats").header("Authorization", bearer(adminToken)))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        return json.readTree(body).path("data").path("reviewCount").asLong();
     }
 
     @Test
