@@ -33,15 +33,18 @@ import jakarta.validation.constraints.Min;
 public interface PostApiDocs {
 
     @Operation(summary = "후기·포트폴리오 목록 (2순위, 로그인 선택)", description = """
-            커뮤니티 탭과 필터에 대응한다. 최신순.
+            커뮤니티 탭과 필터에 대응한다. 정렬은 sort로 고른다(기본 최신순).
             - 작성자 닉네임·실명은 내려주지 않음. 상황(authorStage)만 표시
-            - liked는 비로그인이면 false""")
+            - liked는 비로그인이면 false
+            - sort: latest(작성일 최신순) · likes(도움돼요 많은순, 같으면 최신순). 그 밖의 값은 INVALID_INPUT""")
+    @ApiErrorCodes({INVALID_INPUT})
     ApiResponse<PageResponse<PostSummaryResponse>> list(
             @Parameter(description = "탭") PostType type,
             @Parameter(description = "정책 태그") Long policyId,
             @Parameter(description = "공고 태그") Long jobId,
             @Parameter(description = "직무 태그") JobCategory jobCategory,
             @Parameter(description = "true면 내 상황과 같은 작성자의 글만 (로그인 필요)") Boolean sameStage,
+            @Parameter(description = "latest(기본) · likes") String sort,
             @Parameter(description = "페이지 (0부터)") @Min(0) int page,
             @Parameter(description = "페이지 크기 (최대 50)") @Min(1) @Max(50) int size);
 

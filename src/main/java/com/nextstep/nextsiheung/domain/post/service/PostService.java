@@ -53,7 +53,7 @@ public class PostService {
 
     // viewerId: 로그인 선택 API라 비로그인이면 null
     public PageResponse<PostSummaryResponse> list(PostType type, Long policyId, Long jobId, JobCategory jobCategory,
-                                                  boolean sameStage, Long viewerId, int page, int size) {
+                                                  boolean sameStage, PostSort sort, Long viewerId, int page, int size) {
         PageRequest pageable = PageRequest.of(page, size);
         Set<LifeStage> stages = EnumSet.allOf(LifeStage.class);
         if (sameStage) {
@@ -66,7 +66,9 @@ public class PostService {
                 return PageResponse.of(new PageImpl<>(List.of(), pageable, 0));
             }
         }
-        Page<Post> posts = postRepository.search(type, policyId, jobId, jobCategory, sameStage, stages, pageable);
+        Page<Post> posts = sort == PostSort.LIKES
+                ? postRepository.searchByLikes(type, policyId, jobId, jobCategory, sameStage, stages, pageable)
+                : postRepository.search(type, policyId, jobId, jobCategory, sameStage, stages, pageable);
         return toSummaryPage(posts, viewerId);
     }
 
@@ -75,7 +77,7 @@ public class PostService {
         if (!policyRepository.existsById(policyId)) {
             throw new BusinessException(ErrorCode.POLICY_NOT_FOUND);
         }
-        return list(null, policyId, null, null, false, viewerId, page, size);
+        return list(null, policyId, null, null, false, PostSort.LATEST, viewerId, page, size);
     }
 
     // 숨김 글은 작성자에게만 보여준다

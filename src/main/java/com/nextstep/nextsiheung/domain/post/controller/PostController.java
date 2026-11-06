@@ -12,6 +12,7 @@ import com.nextstep.nextsiheung.domain.post.dto.ReportResponse;
 import com.nextstep.nextsiheung.domain.post.service.PostLikeService;
 import com.nextstep.nextsiheung.domain.post.service.PostReportService;
 import com.nextstep.nextsiheung.domain.post.service.PostService;
+import com.nextstep.nextsiheung.domain.post.service.PostSort;
 import com.nextstep.nextsiheung.global.common.enums.JobCategory;
 import com.nextstep.nextsiheung.global.common.enums.PostType;
 import com.nextstep.nextsiheung.global.response.ApiResponse;
@@ -47,10 +48,11 @@ public class PostController implements PostApiDocs {
             @RequestParam(required = false) Long jobId,
             @RequestParam(required = false) JobCategory jobCategory,
             @RequestParam(required = false) Boolean sameStage,
+            @RequestParam(defaultValue = "latest") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return ApiResponse.ok(postService.list(type, policyId, jobId, jobCategory, Boolean.TRUE.equals(sameStage),
-                CurrentUser.idOrNull(), page, size));
+                PostSort.from(sort), CurrentUser.idOrNull(), page, size));
     }
 
     @Override

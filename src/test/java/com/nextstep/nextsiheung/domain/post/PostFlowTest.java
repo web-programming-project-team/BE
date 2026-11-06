@@ -145,6 +145,28 @@ class PostFlowTest {
     }
 
     @Test
+    void 정렬은_최신순이_기본이고_도움돼요_많은순을_고를_수_있다() throws Exception {
+        Long older = createReview(author, "좋아요 많은 예전 글");
+        Long newer = createReview(author, "좋아요 없는 새 글");
+        for (int i = 0; i < 2; i++) {
+            mvc.perform(post("/api/v1/posts/{id}/likes", older).header("Authorization", bearer(token(LifeStage.ENROLLED))))
+                    .andExpect(status().isCreated());
+        }
+
+        mvc.perform(get("/api/v1/posts").param("policyId", policyId.toString()))
+                .andExpect(jsonPath("$.data.content[0].postId").value(newer))
+                .andExpect(jsonPath("$.data.content[1].postId").value(older));
+        mvc.perform(get("/api/v1/posts").param("policyId", policyId.toString()).param("sort", "likes"))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
+                .andExpect(jsonPath("$.data.content[0].postId").value(older))
+                .andExpect(jsonPath("$.data.content[0].likeCount").value(2))
+                .andExpect(jsonPath("$.data.content[1].postId").value(newer));
+        mvc.perform(get("/api/v1/posts").param("sort", "popular"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_INPUT"));
+    }
+
+    @Test
     void 좋아요는_한_번만_누를_수_있고_취소할_수_있다() throws Exception {
         Long postId = createReview(author, "좋아요 테스트");
         String fan = token(LifeStage.ENROLLED);
