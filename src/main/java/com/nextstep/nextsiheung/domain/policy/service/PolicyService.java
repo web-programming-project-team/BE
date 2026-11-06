@@ -6,6 +6,7 @@ import com.nextstep.nextsiheung.domain.policy.dto.PolicySummaryResponse;
 import com.nextstep.nextsiheung.domain.policy.entity.Policy;
 import com.nextstep.nextsiheung.domain.policy.repository.PolicyRepository;
 import com.nextstep.nextsiheung.domain.policy.repository.PolicySpecs;
+import com.nextstep.nextsiheung.domain.post.repository.PostRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.global.common.Kst;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
@@ -37,6 +38,7 @@ public class PolicyService {
     private final PolicyRepository policyRepository;
     private final RoadmapItemRepository roadmapItemRepository;
     private final JobPolicyMatchRepository jobPolicyMatchRepository;
+    private final PostRepository postRepository;
 
     @Transactional(readOnly = true)
     public PageResponse<PolicySummaryResponse> list(Long userIdOrNull, InterestField field,
@@ -65,11 +67,16 @@ public class PolicyService {
                 : roadmapItemRepository.findCurrent(userIdOrNull, policyId)
                         .map(i -> new PolicyDetailResponse.MyItem(i.getId(), i.getStatus()))
                         .orElse(null);
-        // TODO(커뮤니티): post 엔티티가 생기면 관련 후기 최신 3개와 개수를 채운다
+        List<PolicyDetailResponse.ReviewSummary> reviews = postRepository
+                .findTop3ByPolicyIdAndDeletedAtIsNullAndHiddenFalseOrderByCreatedAtDescIdDesc(policyId).stream()
+                .map(r -> new PolicyDetailResponse.ReviewSummary(r.getId(), r.getType(), r.getRating(),
+                        r.getOneLiner(), r.getPrepPeriod(), r.getAuthorStage(), r.getCreatedAt()))
+                .toList();
+        long reviewCount = postRepository.countByPolicyIdAndDeletedAtIsNullAndHiddenFalse(policyId);
         return new PolicyDetailResponse(p.getId(), p.getTitle(), p.getField(), p.getAgency(), p.getTarget(),
                 p.getContent(), p.getApplyStartDate(), p.getApplyEndDate(), Kst.dDay(p.getApplyEndDate()),
                 p.currentStatus(Kst.today()), p.getContact(), p.getSource(), p.getSourceUrl(), p.getApplyUrl(),
-                p.getLastVerifiedAt(), myItem, List.of(), 0, relatedJobs(policyId));
+                p.getLastVerifiedAt(), myItem, reviews, reviewCount, relatedJobs(policyId));
     }
 
     // 연결 채용공고 최대 2개 (job_policy_match, 접수 중인 공고만 마감 임박순)

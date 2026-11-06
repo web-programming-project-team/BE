@@ -13,6 +13,7 @@ import com.nextstep.nextsiheung.domain.job.entity.JobPosting;
 import com.nextstep.nextsiheung.domain.job.repository.JobBookmarkRepository;
 import com.nextstep.nextsiheung.domain.job.repository.JobPolicyMatchRepository;
 import com.nextstep.nextsiheung.domain.job.repository.JobPostingRepository;
+import com.nextstep.nextsiheung.domain.policy.entity.Policy;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.domain.user.dto.JobPreferenceDto;
 import com.nextstep.nextsiheung.domain.user.entity.JobPreference;
@@ -21,6 +22,7 @@ import com.nextstep.nextsiheung.domain.user.repository.JobPreferenceRepository;
 import com.nextstep.nextsiheung.domain.user.repository.UserRepository;
 import com.nextstep.nextsiheung.domain.user.repository.UserVisitRepository;
 import com.nextstep.nextsiheung.global.common.Kst;
+import com.nextstep.nextsiheung.global.common.enums.JobCategory;
 import com.nextstep.nextsiheung.global.common.enums.ProgressStatus;
 import com.nextstep.nextsiheung.global.exception.BusinessException;
 import com.nextstep.nextsiheung.global.exception.ErrorCode;
@@ -29,6 +31,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -193,20 +196,23 @@ public class JobService {
         if (jobIds.isEmpty()) {
             return Map.of();
         }
-        List<Object[]> rows = matchRepository.findPolicies(jobIds);
+        // 매칭을 고를 때와 같은 순서: 직무가 맞는 정책 먼저, 그다음 신청 마감 순(쿼리 순서 유지, 안정 정렬)
+        List<Object[]> rows = new ArrayList<>(matchRepository.findPolicies(jobIds));
+        rows.sort(Comparator.comparing(r -> JobPolicyMatchService.categoriesOf((Policy) r[2])
+                .contains((JobCategory) r[1]) ? 0 : 1));
         Map<Long, ProgressStatus> statuses = new HashMap<>();
         if (userIdOrNull != null && !rows.isEmpty()) {
             Set<Long> policyIds = new LinkedHashSet<>();
-            rows.forEach(r -> policyIds.add((Long) r[1]));
+            rows.forEach(r -> policyIds.add(((Policy) r[2]).getId()));
             for (Object[] s : roadmapItemRepository.findCurrentStatuses(userIdOrNull, policyIds)) {
                 statuses.put((Long) s[0], (ProgressStatus) s[1]);
             }
         }
         Map<Long, List<HelpfulPolicyDto>> result = new LinkedHashMap<>();
         for (Object[] r : rows) {
-            Long policyId = (Long) r[1];
+            Policy policy = (Policy) r[2];
             result.computeIfAbsent((Long) r[0], k -> new ArrayList<>())
-                    .add(new HelpfulPolicyDto(policyId, (String) r[2], statuses.get(policyId)));
+                    .add(new HelpfulPolicyDto(policy.getId(), policy.getTitle(), statuses.get(policy.getId())));
         }
         return result;
     }

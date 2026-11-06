@@ -95,7 +95,8 @@ public class JobPolicyMatchService {
         return picks;
     }
 
-    static Set<JobCategory> categoriesOf(Policy policy) {
+    // 정책 태그에 들어 있는 직무 키워드 → 직무. 비어 있으면 모든 공고에 도움 되는 정책
+    public static Set<JobCategory> categoriesOf(Policy policy) {
         Set<JobCategory> found = EnumSet.noneOf(JobCategory.class);
         for (String tag : policy.getTags()) {
             String lower = tag.toLowerCase(Locale.ROOT);

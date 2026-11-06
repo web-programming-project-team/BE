@@ -12,10 +12,10 @@ import com.nextstep.nextsiheung.domain.user.entity.JobPreference;
 import com.nextstep.nextsiheung.domain.user.entity.User;
 import com.nextstep.nextsiheung.domain.user.repository.JobPreferenceRepository;
 import com.nextstep.nextsiheung.domain.user.repository.UserRepository;
+import com.nextstep.nextsiheung.global.common.EnumLists;
 import com.nextstep.nextsiheung.global.common.enums.LifeStage;
 import com.nextstep.nextsiheung.global.exception.BusinessException;
 import com.nextstep.nextsiheung.global.exception.ErrorCode;
-import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -49,7 +49,8 @@ public class UserProfileService {
         JobPreferenceDto preference = jobPreferenceRepository.findById(userId)
                 .map(UserProfileService::toDto)
                 .orElse(null);
-        return new ProfileResponse(List.copyOf(user.getLifeStages()), List.copyOf(user.getInterests()), preference);
+        return new ProfileResponse(EnumLists.sorted(user.getLifeStages()), EnumLists.sorted(user.getInterests()),
+                preference);
     }
 
     // 보낸 필드만 바꾼다
@@ -80,8 +81,8 @@ public class UserProfileService {
     }
 
     private static JobPreferenceDto toDto(JobPreference p) {
-        return new JobPreferenceDto(List.copyOf(p.getRegions()), p.getEducation(), p.getCareerLevel(),
-                List.copyOf(p.getJobCategories()), List.copyOf(p.getEmploymentTypes()));
+        return new JobPreferenceDto(EnumLists.sorted(p.getRegions()), p.getEducation(), p.getCareerLevel(),
+                EnumLists.sorted(p.getJobCategories()), EnumLists.sorted(p.getEmploymentTypes()));
     }
 
     private User findUser(Long userId) {

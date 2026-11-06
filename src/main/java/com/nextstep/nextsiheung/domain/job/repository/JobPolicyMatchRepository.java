@@ -12,9 +12,10 @@ import org.springframework.data.repository.query.Param;
 
 public interface JobPolicyMatchRepository extends JpaRepository<JobPolicyMatch, JobPolicyMatch.Id> {
 
-    // 공고별 도움 되는 지원: [jobId, policyId, title]. 신청 마감이 가까운 정책부터
+    // 공고별 도움 되는 지원: [jobId, jobCategory, Policy]. 신청 마감이 가까운 정책부터
+    // (직무가 맞는 정책을 앞에 두는 건 서비스에서 태그로 다시 정렬한다)
     @Query("""
-            select m.id.jobId, p.id, p.title from JobPolicyMatch m join m.policy p
+            select m.id.jobId, m.job.jobCategory, p from JobPolicyMatch m join m.policy p
             where m.id.jobId in :jobIds
             order by case when p.applyEndDate is null then 1 else 0 end, p.applyEndDate asc, p.id asc
             """)

@@ -5,13 +5,17 @@ import com.nextstep.nextsiheung.domain.admin.dto.SyncLogResponse;
 import com.nextstep.nextsiheung.domain.batch.entity.SyncLog;
 import com.nextstep.nextsiheung.domain.batch.repository.SyncLogRepository;
 import com.nextstep.nextsiheung.domain.job.repository.JobBookmarkRepository;
+import com.nextstep.nextsiheung.domain.post.repository.PostRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.global.common.Kst;
+import com.nextstep.nextsiheung.global.common.enums.PostType;
 import com.nextstep.nextsiheung.global.exception.BusinessException;
 import com.nextstep.nextsiheung.global.exception.ErrorCode;
 import com.nextstep.nextsiheung.global.response.PageResponse;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +36,7 @@ public class AdminStatsService {
     private final RoadmapItemRepository roadmapItemRepository;
     private final SyncLogRepository syncLogRepository;
     private final JobBookmarkRepository jobBookmarkRepository;
+    private final PostRepository postRepository;
     private final JdbcTemplate jdbc;
 
     // 기간 기본값: 오늘까지 최근 7일
@@ -43,16 +48,25 @@ public class AdminStatsService {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
 
-        List<StatsResponse.TopProgram> topPrograms = roadmapItemRepository
-                .findTopPrograms(PageRequest.of(0, TOP_PROGRAM_LIMIT)).stream()
-                // TODO(커뮤니티): post 엔티티가 생기면 정책별 후기 수
-                .map(row -> new StatsResponse.TopProgram((Long) row[0], (String) row[1], (Long) row[2], 0))
+        List<Object[]> programs = roadmapItemRepository.findTopPrograms(PageRequest.of(0, TOP_PROGRAM_LIMIT));
+        Map<Long, Long> reviewCounts = new HashMap<>();
+        List<Long> policyIds = programs.stream().map(row -> (Long) row[0]).toList();
+        if (!policyIds.isEmpty()) {
+            for (Object[] row : postRepository.countVisibleByPolicyIds(policyIds)) {
+                reviewCounts.put((Long) row[0], (Long) row[1]);
+            }
+        }
+        List<StatsResponse.TopProgram> topPrograms = programs.stream()
+                .map(row -> new StatsResponse.TopProgram((Long) row[0], (String) row[1], (Long) row[2],
+                        reviewCounts.getOrDefault((Long) row[0], 0L)))
                 .toList();
 
         long bookmarkedJobCount = jobBookmarkRepository.countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
                 start.atStartOfDay(), end.plusDays(1).atStartOfDay());
-        // TODO(커뮤니티): post 엔티티가 생기면 기간 안 후기 작성 수
-        long reviewCount = 0;
+        // 기간 안 후기(합격·참여 후기) 작성 수. 포트폴리오는 후기가 아니라 뺀다
+        long reviewCount = postRepository.countByTypeInAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                Set.of(PostType.PASS_REVIEW, PostType.PROGRAM_REVIEW),
+                start.atStartOfDay(), end.plusDays(1).atStartOfDay());
 
         return new StatsResponse(new StatsResponse.Period(start, end), revisitRate7d(start, end),
                 bookmarkedJobCount, reviewCount, topPrograms);

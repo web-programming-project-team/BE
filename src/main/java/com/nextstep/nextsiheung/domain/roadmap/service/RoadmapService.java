@@ -23,6 +23,7 @@ import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapTemplateRepository;
 import com.nextstep.nextsiheung.domain.user.entity.User;
+import com.nextstep.nextsiheung.global.common.EnumLists;
 import com.nextstep.nextsiheung.global.common.Kst;
 import com.nextstep.nextsiheung.global.common.enums.EventType;
 import com.nextstep.nextsiheung.global.common.enums.InterestField;
@@ -223,8 +224,8 @@ public class RoadmapService {
         int newJobCount = jobService.countNewMatches(userId);
         int unreadNotificationCount = (int) notificationService.countUnread(userId);
 
-        return new HomeSummaryResponse(user.getNickname(), List.copyOf(user.getLifeStages()),
-                List.copyOf(user.getInterests()), progress(roadmap), nextActions, deadlines, newJobCount,
+        return new HomeSummaryResponse(user.getNickname(), EnumLists.sorted(user.getLifeStages()),
+                EnumLists.sorted(user.getInterests()), progress(roadmap), nextActions, deadlines, newJobCount,
                 unreadNotificationCount);
     }
 
