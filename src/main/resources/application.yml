@@ -24,14 +24,18 @@ app:
     refresh-token-validity-seconds: 1209600  # 14일
   batch:
     policy-sync-cron: "0 0 3 * * *"          # 매일 03:00 온통청년
+    policy-sync-zip-code: "41390"            # 온통청년 지역 필터: 시흥시 (전국·경기도 공통 정책도 함께 걸림)
+    policy-sync-page-size: 100
+    policy-sync-max-pages: 30
     job-sync-cron: "0 0 4 * * *"             # 매일 04:00 잡아바(경기데이터드림)
     job-sync-page-size: 1000                 # 잡아바 1회 최대 1000건
     job-sync-max-pages: 30                   # 최신(마지막) 페이지부터 거꾸로 최대 30페이지
     deadline-notify-cron: "0 0 9 * * *"      # 매일 09:00 마감 알림
     enabled: false                           # 키 발급 전까지 꺼 둠
     job-sync-on-startup: false               # true면 서버 시작 시 잡아바 수집 1회 (로컬 테스트용)
+    policy-sync-on-startup: false            # true면 서버 시작 시 온통청년 수집 1회 (로컬 테스트용)
   seed:
-    sample-data: false                       # true면 템플릿이 없을 때 샘플 정책·로드맵 템플릿을 넣음 (로컬·시연용)
+    roadmap-templates: true                  # 로드맵 템플릿 4개 (이름이 같은 템플릿이 없을 때만). 단계 정책은 실제 정책으로 자동 연결
 
 springdoc:
   swagger-ui:

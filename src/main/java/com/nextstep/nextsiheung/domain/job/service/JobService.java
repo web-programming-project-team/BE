@@ -196,10 +196,11 @@ public class JobService {
         if (jobIds.isEmpty()) {
             return Map.of();
         }
-        // 매칭을 고를 때와 같은 순서: 직무가 맞는 정책 먼저, 그다음 신청 마감 순(쿼리 순서 유지, 안정 정렬)
+        // 매칭을 고를 때와 같은 순서: 직무가 맞는 정책 → 시흥·경기 기관 → 신청 마감 순(쿼리 순서 유지, 안정 정렬)
         List<Object[]> rows = new ArrayList<>(matchRepository.findPolicies(jobIds));
-        rows.sort(Comparator.comparing(r -> JobPolicyMatchService.categoriesOf((Policy) r[2])
-                .contains((JobCategory) r[1]) ? 0 : 1));
+        rows.sort(Comparator.<Object[]>comparingInt(r -> JobPolicyMatchService.categoriesOf((Policy) r[2])
+                        .contains((JobCategory) r[1]) ? 0 : 1)
+                .thenComparingInt(r -> -JobPolicyMatchService.localScore((Policy) r[2])));
         Map<Long, ProgressStatus> statuses = new HashMap<>();
         if (userIdOrNull != null && !rows.isEmpty()) {
             Set<Long> policyIds = new LinkedHashSet<>();

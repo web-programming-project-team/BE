@@ -30,7 +30,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 // 관리자 공고·맞춤 채용·관심 공고·공고-정책 매칭·알림 센터 (로컬 MySQL 필요, 테스트마다 롤백)
 // 로컬 DB에 잡아바 공고가 있을 수 있어 목록은 '내가 만든 공고가 들어 있는지'로 확인한다
-@SpringBootTest(properties = "app.seed.sample-data=false")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class JobNotificationFlowTest {

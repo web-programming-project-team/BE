@@ -39,7 +39,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 // 온보딩 → 로드맵 생성 → 진행상태 변경 → 정책 추가·삭제 → 캘린더 → 메인 요약 → 상황 변경 → 탈퇴
 // (로컬 MySQL 필요, 테스트마다 롤백)
-@SpringBootTest(properties = "app.seed.sample-data=false")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class RoadmapFlowTest {

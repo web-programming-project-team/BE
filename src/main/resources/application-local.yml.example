@@ -12,7 +12,7 @@ spring:
 
 app:
   seed:
-    sample-data: true         # 샘플 정책 9건·로드맵 템플릿 4개 (템플릿 테이블이 비어 있을 때만)
+    roadmap-templates: true   # 로드맵 템플릿 4개. 단계 정책은 온통청년 수집 정책으로 자동 연결 (ontong-api-key 필요)
   jwt:
     secret: change-me-to-a-random-256-bit-base64-string
   external:
