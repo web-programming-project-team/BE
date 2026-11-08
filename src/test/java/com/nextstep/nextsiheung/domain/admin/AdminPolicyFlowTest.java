@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
 
 // 관리자 정책 등록·수정·종료·확인 완료, 운영 지표, 수집 기록 (로컬 MySQL 필요, 테스트마다 롤백)
-@SpringBootTest(properties = "app.seed.sample-data=false")
+@SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
 class AdminPolicyFlowTest {

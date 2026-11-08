@@ -12,6 +12,7 @@ import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import lombok.AccessLevel;
@@ -55,5 +56,11 @@ public class TemplateStep {
     public TemplateStep addPolicy(Policy policy) {
         policies.add(policy);
         return this;
+    }
+
+    // 템플릿 정책 연결(RoadmapTemplatePolicyLinker)이 규칙으로 고른 정책으로 통째로 바꾼다
+    public void replacePolicies(Collection<Policy> chosen) {
+        policies.clear();
+        policies.addAll(chosen);
     }
 }

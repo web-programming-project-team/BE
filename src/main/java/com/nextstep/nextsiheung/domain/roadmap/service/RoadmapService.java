@@ -79,7 +79,7 @@ public class RoadmapService {
                                 user.getInterests()))
                         .thenComparing(RoadmapTemplate::getId, Comparator.reverseOrder()));
         if (best.isEmpty()) {
-            log.warn("로드맵 템플릿이 없어 빈 로드맵을 만듭니다. app.seed.sample-data 또는 seed SQL을 확인하세요");
+            log.warn("로드맵 템플릿이 없어 빈 로드맵을 만듭니다. app.seed.roadmap-templates 설정을 확인하세요");
         }
         Roadmap roadmap = new Roadmap(user, best.orElse(null),
                 best.map(RoadmapTemplate::getName).orElse(DEFAULT_TEMPLATE_NAME));
