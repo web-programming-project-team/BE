@@ -111,6 +111,24 @@ class JobNotificationFlowTest {
                         .contentType(MediaType.APPLICATION_JSON).content(jobBody("IT", Kst.today().plusDays(9))))
                 .andExpect(status().isForbidden());
 
+        // 관리자 목록: ADMIN 공고만, 키워드·마감 여부로 거른다
+        mvc.perform(get("/api/v1/admin/jobs").header("Authorization", admin)
+                        .param("source", "ADMIN").param("keyword", "플로우테스트"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.content[0].jobId").value(jobId))
+                .andExpect(jsonPath("$.data.content[0].jobCategory").value("DESIGN"))
+                .andExpect(jsonPath("$.data.content[0].originalUrl").value("https://example.com/job"))
+                .andExpect(jsonPath("$.data.content[*].jobId", not(hasItem(jobabaId.intValue()))));
+        mvc.perform(patch("/api/v1/admin/jobs/" + jobId + "/close").header("Authorization", admin));
+        mvc.perform(get("/api/v1/admin/jobs").header("Authorization", admin)
+                        .param("keyword", "플로우테스트").param("closed", "false"))
+                .andExpect(jsonPath("$.data.content[*].jobId", not(hasItem((int) jobId))));
+        mvc.perform(get("/api/v1/admin/jobs").header("Authorization", admin)
+                        .param("keyword", "플로우테스트").param("closed", "true"))
+                .andExpect(jsonPath("$.data.content[0].closed").value(true));
+        mvc.perform(get("/api/v1/admin/jobs").header("Authorization", admin).param("size", "51"))
+                .andExpect(status().isBadRequest());
+
         mvc.perform(post("/api/v1/admin/jobs").header("Authorization", admin)
                         .contentType(MediaType.APPLICATION_JSON).content("{\"company\":\"x\"}"))
                 .andExpect(status().isBadRequest())

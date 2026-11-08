@@ -4,6 +4,7 @@ import com.nextstep.nextsiheung.domain.job.entity.JobPosting;
 import com.nextstep.nextsiheung.global.common.enums.Education;
 import com.nextstep.nextsiheung.global.common.enums.EmploymentType;
 import com.nextstep.nextsiheung.global.common.enums.JobCategory;
+import com.nextstep.nextsiheung.global.common.enums.JobSource;
 import com.nextstep.nextsiheung.global.common.enums.Region;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -57,6 +58,20 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
                            @Param("categories") Collection<JobCategory> categories,
                            @Param("employmentTypes") Collection<EmploymentType> employmentTypes,
                            @Param("since") LocalDateTime since);
+
+    // 관리자 공고 목록: 출처·마감 여부·키워드(회사명·제목)로 거른다. 조건이 null이면 거르지 않는다
+    @Query("""
+            select j from JobPosting j
+            where (:source is null or j.source = :source)
+              and (:keyword is null or j.company like :keyword or j.title like :keyword)
+              and (:closed is null
+                   or (:closed = true and (j.closed = true or j.deadline < :today))
+                   or (:closed = false and j.closed = false and (j.deadline is null or j.deadline >= :today)))
+            order by j.collectedAt desc, j.id desc
+            """)
+    Page<JobPosting> findForAdmin(@Param("source") JobSource source, @Param("closed") Boolean closed,
+                                  @Param("keyword") String keyword, @Param("today") LocalDate today,
+                                  Pageable pageable);
 
     // 공고-정책 매칭 대상: 접수 중인 공고의 [jobId, jobCategory]
     @Query("""
