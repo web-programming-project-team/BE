@@ -1,5 +1,6 @@
 package com.nextstep.nextsiheung.domain.admin.service;
 
+import com.nextstep.nextsiheung.domain.admin.dto.AdminJobListResponse;
 import com.nextstep.nextsiheung.domain.admin.dto.AdminJobRequest;
 import com.nextstep.nextsiheung.domain.admin.dto.AdminJobResponse;
 import com.nextstep.nextsiheung.domain.job.entity.JobPosting;
@@ -9,7 +10,10 @@ import com.nextstep.nextsiheung.global.common.Kst;
 import com.nextstep.nextsiheung.global.common.enums.JobSource;
 import com.nextstep.nextsiheung.global.exception.BusinessException;
 import com.nextstep.nextsiheung.global.exception.ErrorCode;
+import com.nextstep.nextsiheung.global.response.PageResponse;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +24,23 @@ public class AdminJobService {
 
     private final JobPostingRepository jobPostingRepository;
     private final JobPolicyMatchService jobPolicyMatchService;
+
+    // 최근 등록(수집)순. source를 비우면 잡아바 공고까지 모두
+    @Transactional(readOnly = true)
+    public PageResponse<AdminJobListResponse> list(JobSource source, Boolean closed, String keyword, int page,
+                                                   int size) {
+        if (page < 0 || size < 1 || size > 50) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        LocalDate today = Kst.today();
+        String like = keyword == null || keyword.isBlank() ? null : "%" + keyword.trim() + "%";
+        return PageResponse.of(jobPostingRepository
+                .findForAdmin(source, closed, like, today, PageRequest.of(page, size))
+                .map(j -> new AdminJobListResponse(j.getId(), j.getSource(), j.getCompany(), j.getTitle(),
+                        j.getRegion(), j.getAddress(), j.getEducation(), j.getCareerLevel(), j.getEmploymentType(),
+                        j.getJobCategory(), j.getSalary(), j.getDeadline(), Kst.dDay(j.getDeadline()),
+                        j.getOriginalUrl(), j.isClosedOn(today), j.getCollectedAt())));
+    }
 
     @Transactional
     public AdminJobResponse create(Long adminId, AdminJobRequest r) {
