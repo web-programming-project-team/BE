@@ -39,6 +39,15 @@ public interface CalendarEventRepository extends JpaRepository<CalendarEvent, Lo
                                       @Param("to") LocalDate to, @Param("types") Collection<EventType> types,
                                       Pageable pageable);
 
+    // DEADLINE 알림: 날짜가 dates 중 하나인 모든 회원의 일정 (보관한 로드맵의 자동 일정은 이미 지워져 있다)
+    @Query("""
+            select e from CalendarEvent e left join fetch e.item
+            where e.date in :dates and e.type in :types
+            order by e.user.id asc, e.date asc, e.id asc
+            """)
+    List<CalendarEvent> findAllOnDates(@Param("dates") Collection<LocalDate> dates,
+                                       @Param("types") Collection<EventType> types);
+
     // 상황 변경으로 보관한 로드맵의 자동 일정은 캘린더에서 뺀다
     // 영속성 컨텍스트는 비우지 않는다(상황 변경 중인 회원·로드맵 엔티티를 계속 쓰므로)
     @Modifying(flushAutomatically = true)

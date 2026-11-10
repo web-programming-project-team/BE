@@ -2,6 +2,7 @@ package com.nextstep.nextsiheung.domain.post.service;
 
 import com.nextstep.nextsiheung.domain.job.entity.JobPosting;
 import com.nextstep.nextsiheung.domain.job.repository.JobPostingRepository;
+import com.nextstep.nextsiheung.domain.notification.service.NewReviewNotificationService;
 import com.nextstep.nextsiheung.domain.policy.repository.PolicyRepository;
 import com.nextstep.nextsiheung.domain.post.dto.MyPostResponse;
 import com.nextstep.nextsiheung.domain.post.dto.PostCreateRequest;
@@ -50,6 +51,7 @@ public class PostService {
     private final PolicyRepository policyRepository;
     private final JobPostingRepository jobPostingRepository;
     private final PostResponseAssembler assembler;
+    private final NewReviewNotificationService newReviewNotificationService;
 
     // viewerId: 로그인 선택 API라 비로그인이면 null
     public PageResponse<PostSummaryResponse> list(PostType type, Long policyId, Long jobId, JobCategory jobCategory,
@@ -151,7 +153,7 @@ public class PostService {
                 .authorStage(authorStage)
                 .helpfulPoints(helpfulPoints)
                 .build());
-        // TODO(알림 담당): 연결된 정책·공고에 관심 둔 사용자에게 NEW_REVIEW 알림
+        newReviewNotificationService.send(post);
         return new PostIdResponse(post.getId());
     }
 

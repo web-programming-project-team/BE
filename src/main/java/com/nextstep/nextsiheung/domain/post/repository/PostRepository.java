@@ -58,6 +58,16 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     long countByPolicyIdAndDeletedAtIsNullAndHiddenFalse(Long policyId);
 
+    // 채용 상세의 합격 후기: 이 공고에 달렸거나 같은 직무인 합격 후기 (삭제·숨김 제외, 최신순)
+    @Query("""
+            select p from Post p
+            where p.type = com.nextstep.nextsiheung.global.common.enums.PostType.PASS_REVIEW
+              and p.deletedAt is null and p.hidden = false
+              and (p.jobId = :jobId or (:jobCategory is not null and p.jobCategory = :jobCategory))
+            order by p.createdAt desc, p.id desc""")
+    List<Post> findPassReviewsForJob(@Param("jobId") Long jobId, @Param("jobCategory") JobCategory jobCategory,
+                                     Pageable pageable);
+
     // 운영 지표의 프로그램별 후기 수. [policyId, count] (삭제·숨김 제외)
     @Query("""
             select p.policyId, count(p) from Post p

@@ -23,6 +23,10 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // NEW_JOB 알림을 마지막으로 보낸 시점 (같은 공고를 두 번 세지 않도록)
     Optional<Notification> findFirstByUserIdAndTypeOrderByCreatedAtDesc(Long userId, NotificationType type);
 
+    // 같은 날 배치가 두 번 돌아도 같은 알림을 다시 보내지 않도록
+    boolean existsByUserIdAndTypeAndTitleAndCreatedAtGreaterThanEqual(Long userId, NotificationType type,
+                                                                       String title, LocalDateTime since);
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update Notification n set n.read = true, n.readAt = :now where n.user.id = :userId and n.read = false")
     int markAllRead(@Param("userId") Long userId, @Param("now") LocalDateTime now);
