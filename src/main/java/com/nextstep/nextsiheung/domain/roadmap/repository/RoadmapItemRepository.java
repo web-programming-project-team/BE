@@ -33,6 +33,13 @@ public interface RoadmapItemRepository extends JpaRepository<RoadmapItem, Long> 
             """)
     List<Object[]> countUsersByPolicy(@Param("policyIds") Collection<Long> policyIds);
 
+    // NEW_REVIEW 알림 대상: 현재 로드맵에 이 정책을 담은 사용자
+    @Query("""
+            select distinct i.step.roadmap.user.id from RoadmapItem i
+            where i.policy.id = :policyId and i.step.roadmap.archived = false
+            """)
+    List<Long> findCurrentUserIdsByPolicyId(@Param("policyId") Long policyId);
+
     // 운영 지표 topPrograms: 진행상태를 한 번이라도 고른(TO_CHECK가 아닌) 사용자 수가 많은 정책
     // [policyId, title, 사용자 수]
     @Query("""

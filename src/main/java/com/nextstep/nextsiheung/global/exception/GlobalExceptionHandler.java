@@ -6,12 +6,14 @@ import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -61,6 +63,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Map<String, List<Map<String, String>>>>> handleNotReadable(
             HttpMessageNotReadableException e) {
         return invalidInput(List.of(fieldError("body", "요청 본문을 읽을 수 없습니다. JSON 형식과 enum 값을 확인해 주세요.")));
+    }
+
+    // 없는 주소 (예: /api/v1/nope). 처리하지 않으면 아래 Exception으로 떨어져 500이 된다
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleNoResource(NoResourceFoundException e) {
+        return ResponseEntity.status(ErrorCode.NOT_FOUND.getStatus()).body(ApiResponse.fail(ErrorCode.NOT_FOUND, null));
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ApiResponse<Void>> handleMethodNotSupported(HttpRequestMethodNotSupportedException e) {
+        return ResponseEntity.status(ErrorCode.METHOD_NOT_ALLOWED.getStatus())
+                .body(ApiResponse.fail(ErrorCode.METHOD_NOT_ALLOWED, null));
     }
 
     @ExceptionHandler(Exception.class)

@@ -34,6 +34,10 @@ public interface JobBookmarkRepository extends JpaRepository<JobBookmark, Long> 
     Page<JobBookmark> findPageByUserId(@Param("userId") Long userId, @Param("today") LocalDate today,
                                        Pageable pageable);
 
+    // NEW_REVIEW 알림 대상: 이 공고를 관심 저장한 사용자
+    @Query("select b.user.id from JobBookmark b where b.job.id = :jobId")
+    List<Long> findUserIdsByJobId(@Param("jobId") Long jobId);
+
     // 운영 지표: 기간 안 관심 공고 저장 수
     long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(LocalDateTime from, LocalDateTime to);
 }

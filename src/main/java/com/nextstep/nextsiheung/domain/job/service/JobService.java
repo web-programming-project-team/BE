@@ -14,6 +14,7 @@ import com.nextstep.nextsiheung.domain.job.repository.JobBookmarkRepository;
 import com.nextstep.nextsiheung.domain.job.repository.JobPolicyMatchRepository;
 import com.nextstep.nextsiheung.domain.job.repository.JobPostingRepository;
 import com.nextstep.nextsiheung.domain.policy.entity.Policy;
+import com.nextstep.nextsiheung.domain.post.repository.PostRepository;
 import com.nextstep.nextsiheung.domain.roadmap.repository.RoadmapItemRepository;
 import com.nextstep.nextsiheung.domain.user.dto.JobPreferenceDto;
 import com.nextstep.nextsiheung.domain.user.entity.JobPreference;
@@ -53,6 +54,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class JobService {
 
     private static final int MAX_PAGE_SIZE = 50;
+    // 채용 상세에 보여 줄 합격 후기 수
+    private static final int MAX_DETAIL_REVIEWS = 3;
 
     private final JobPostingRepository jobPostingRepository;
     private final JobBookmarkRepository bookmarkRepository;
@@ -62,6 +65,7 @@ public class JobService {
     private final UserVisitRepository userVisitRepository;
     private final RoadmapItemRepository roadmapItemRepository;
     private final CalendarEventRepository calendarEventRepository;
+    private final PostRepository postRepository;
 
     // 상태 등록(온보딩)을 마치지 않았거나 채용 조건이 없으면 ONBOARDING_REQUIRED
     @Transactional(readOnly = true)
@@ -104,11 +108,15 @@ public class JobService {
         boolean bookmarked = userIdOrNull != null && bookmarkRepository.existsByUserIdAndJobId(userIdOrNull, jobId);
         List<HelpfulPolicyDto> helpful = helpfulPolicies(userIdOrNull, List.of(jobId))
                 .getOrDefault(jobId, List.of());
-        // TODO(커뮤니티): post 엔티티가 생기면 같은 직무(jobCategory)의 합격 후기를 채운다
+        List<JobDetailResponse.JobReview> reviews = postRepository
+                .findPassReviewsForJob(jobId, j.getJobCategory(), PageRequest.of(0, MAX_DETAIL_REVIEWS)).stream()
+                .map(p -> new JobDetailResponse.JobReview(p.getId(), p.getType(), p.getRating(), p.getOneLiner(),
+                        p.getJobCategory()))
+                .toList();
         return new JobDetailResponse(j.getId(), j.getCompany(), j.getTitle(), j.getRegion(), j.getAddress(),
                 j.getEducation(), j.getCareerLevel(), j.getEmploymentType(), j.getJobCategory(), j.getSalary(),
                 j.getDeadline(), Kst.dDay(j.getDeadline()), j.getOriginalUrl(), j.getSource(), bookmarked, helpful,
-                List.of());
+                reviews);
     }
 
     // 마감일이 있으면 캘린더에 JOB_DEADLINE 일정을 같이 만든다 (상시채용이면 calendarEventId=null)
