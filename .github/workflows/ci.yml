@@ -1,0 +1,63 @@
+name: BE CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # job이 도는 동안 옆에 MySQL 컨테이너를 띄운다 (docker-compose.yml의 mysql과 같은 역할)
+    services:
+      mysql:
+        image: mysql:8.4                 # docker-compose.yml과 같은 버전
+        env:
+          MYSQL_DATABASE: next_siheung
+          MYSQL_USER: nextstep
+          MYSQL_PASSWORD: ci-password
+          MYSQL_ROOT_PASSWORD: ci-root-password
+          TZ: Asia/Seoul                 # 문제 ③: DB의 now()를 한국 시간으로
+        ports:
+          - 3306:3306
+        # MySQL이 접속을 받을 준비가 될 때까지 기다린다. 없으면 테스트가 먼저 시작해 연결 실패
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci-root-password"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      TZ: Asia/Seoul                                   # 문제 ③: JVM도 한국 시간
+      # 문제 ①: application-local.yml 대신 환경변수로
+      SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/next_siheung?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+      SPRING_DATASOURCE_USERNAME: nextstep
+      SPRING_DATASOURCE_PASSWORD: ci-password
+      SPRING_JPA_HIBERNATE_DDL_AUTO: create            # 문제 ②: 빈 DB에 엔티티 기준으로 테이블 생성
+      APP_JWT_SECRET: ${{ secrets.JWT_SECRET }}        # 2-1에서 등록한 Secret
+
+    steps:
+      - name: 코드 받기
+        uses: actions/checkout@v4
+
+      - name: Java 21 설치
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Gradle 설정 (캐시 포함)
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: 빌드 + 테스트
+        run: ./gradlew build             # 컴파일 + 테스트 + jar 생성. 테스트 하나라도 실패하면 빨간 X
+
+      # 실패했을 때만 테스트 리포트(HTML)를 내려받을 수 있게 올려 둔다
+      - name: 테스트 리포트 업로드
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: build/reports/tests/test
