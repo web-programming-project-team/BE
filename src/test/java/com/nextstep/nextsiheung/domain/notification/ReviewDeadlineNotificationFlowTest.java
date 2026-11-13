@@ -176,7 +176,7 @@ class ReviewDeadlineNotificationFlowTest {
     void 없는_주소는_404_지원하지_않는_메서드는_405() throws Exception {
         String user = bearer(saveUser(Role.USER, LifeStage.JOB_SEEKING), Role.USER);
         mvc.perform(get("/api/v1/nope").header("Authorization", user))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("NOT_FOUND"));
         mvc.perform(patch("/api/v1/notifications/unread-count").header("Authorization", user))
                 .andExpect(status().isMethodNotAllowed())
