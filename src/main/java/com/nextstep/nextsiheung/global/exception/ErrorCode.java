@@ -20,10 +20,16 @@ public enum ErrorCode {
     ROADMAP_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵을 찾을 수 없습니다."),
     ROADMAP_ITEM_NOT_FOUND(HttpStatus.NOT_FOUND, "로드맵 항목을 찾을 수 없습니다."),
     EVENT_NOT_FOUND(HttpStatus.NOT_FOUND, "일정을 찾을 수 없습니다."),
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
+    // 없는 주소로 요청했거나 지원하지 않는 HTTP 메서드
+    NOT_FOUND(HttpStatus.NOT_FOUND, "요청한 주소를 찾을 수 없습니다."),
+    METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, "지원하지 않는 요청 방식입니다."),
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입한 이메일입니다."),
     ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 등록된 항목입니다."),
     POLICY_ENDED(HttpStatus.UNPROCESSABLE_CONTENT, "종료된 정책입니다."),
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "서버 오류가 발생했습니다."),
+    // 컨트롤러 뼈대만 있고 서비스가 아직 없는 API
+    NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "아직 구현되지 않은 API입니다.");
 
     private final HttpStatus status;
     private final String message;

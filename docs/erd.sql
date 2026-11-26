@@ -1,6 +1,8 @@
 -- NEXT 시흥 ERD (ERDCloud 가져오기용, MySQL)
--- 기준: API 명세 v1.1, 공통 enum 15개. enum 컬럼은 VARCHAR(30) + @Enumerated(EnumType.STRING)
--- 주민등록번호·소득 정보는 어떤 테이블에도 두지 않는다. UNIQUE 조건은 COMMENT에 표시
+-- 기준: API 명세 v1.5 (v1.4 + 잡아바 채용정보), 공통 enum 16개. enum 컬럼은 VARCHAR(30) + @Enumerated(EnumType.STRING)
+-- 주민등록번호·소득 정보는 어떤 테이블에도 두지 않는다. UNIQUE 제약은 아래 'UNIQUE' 절에 모아 둠
+-- 회원 탈퇴: 회원 소유 데이터는 ON DELETE CASCADE로 함께 삭제, 게시글 작성자·신고자·등록 관리자는 SET NULL로 남김
+--   (JPA에서는 @OnDelete(action = OnDeleteAction.CASCADE / SET_NULL)를 달아야 ddl-auto로 만든 테이블에도 같은 규칙이 생긴다)
 
 -- ───────── 회원 ─────────
 CREATE TABLE `users` (
@@ -13,7 +15,7 @@ CREATE TABLE `users` (
   `onboarding_completed` TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '상태 등록 완료 여부',
   `agree_terms`          TINYINT(1)   NOT NULL COMMENT '이용약관 동의',
   `agree_privacy`        TINYINT(1)   NOT NULL COMMENT '개인정보 수집 동의',
-  `last_login_at`        DATETIME     NULL     COMMENT '마지막 접속 (새 공고 isNew 기준)',
+  `last_login_at`        DATETIME     NULL     COMMENT '마지막 로그인 일시 (isNew·새 공고 알림 기준은 user_visit의 직전 방문일)',
   `created_at`           DATETIME     NOT NULL COMMENT '가입일',
   `updated_at`           DATETIME     NOT NULL COMMENT '수정일'
 ) COMMENT = '회원';
@@ -21,7 +23,7 @@ CREATE TABLE `users` (
 CREATE TABLE `refresh_token` (
   `token_id`   BIGINT       NOT NULL COMMENT '토큰 ID',
   `user_id`    BIGINT       NOT NULL COMMENT '회원 ID',
-  `token`      VARCHAR(500) NOT NULL COMMENT 'Refresh 토큰 (UNIQUE)',
+  `token_hash` CHAR(64)     NOT NULL COMMENT 'Refresh 토큰의 SHA-256 hex (UNIQUE, 원문은 저장하지 않음)',
   `expires_at` DATETIME     NOT NULL COMMENT '만료 일시 (14일)',
   `created_at` DATETIME     NOT NULL COMMENT '발급일'
 ) COMMENT = 'Refresh 토큰';
@@ -165,21 +167,24 @@ CREATE TABLE `roadmap_item_history` (
 -- ───────── 맞춤 채용 ─────────
 CREATE TABLE `job_posting` (
   `job_id`          BIGINT       NOT NULL COMMENT '공고 ID',
-  `external_id`     VARCHAR(50)  NOT NULL COMMENT '고용24 구인인증번호 (UNIQUE)',
-  `company`         VARCHAR(100) NOT NULL COMMENT '회사명',
-  `title`           VARCHAR(200) NOT NULL COMMENT '공고 제목',
-  `region`          VARCHAR(30)  NOT NULL COMMENT 'Region',
-  `address`         VARCHAR(200) NULL     COMMENT '근무지 주소',
-  `education`       VARCHAR(30)  NOT NULL COMMENT 'Education',
-  `career_level`    VARCHAR(30)  NOT NULL COMMENT '경력: NEW(신입)',
-  `employment_type` VARCHAR(30)  NOT NULL COMMENT 'EmploymentType',
-  `job_category`    VARCHAR(30)  NOT NULL COMMENT 'JobCategory (직무 사전으로 통일)',
-  `salary`          VARCHAR(100) NULL     COMMENT '급여',
-  `deadline`        DATE         NOT NULL COMMENT '마감일',
-  `original_url`    VARCHAR(500) NOT NULL COMMENT '고용24 원문 URL',
+  `source`          VARCHAR(30)  NOT NULL COMMENT 'JobSource: JOBABA, ADMIN',
+  `external_id`     VARCHAR(64)  NULL     COMMENT '잡아바 공고 URL의 SHA-256 hex (UNIQUE, 잡아바에 공고 ID가 없음. ADMIN 등록이면 NULL)',
+  `company`         VARCHAR(100) NOT NULL COMMENT '회사명 (ENTRPRS_NM)',
+  `title`           VARCHAR(200) NOT NULL COMMENT '공고 제목 (PBANC_CONT)',
+  `region`          VARCHAR(30)  NOT NULL COMMENT 'Region (WORK_REGION_CONT에서 변환, 대상 지역만 저장)',
+  `address`         VARCHAR(200) NULL     COMMENT '근무지 (잡아바는 시·군 단위 WORK_REGION_CONT만 제공)',
+  `education`       VARCHAR(30)  NOT NULL COMMENT 'Education (ACDMCR_CD_NM 중 가장 낮은 학력 기준)',
+  `career_level`    VARCHAR(30)  NOT NULL COMMENT '경력: NEW(신입 가능)만. 잡아바는 신입·신입/경력·경력무관 공고만 수집',
+  `employment_type` VARCHAR(30)  NOT NULL COMMENT 'EmploymentType (PBANC_FORM_DIV에서 변환)',
+  `job_category`    VARCHAR(30)  NOT NULL COMMENT 'JobCategory (RECRUT_FIELD_NM, 없으면 공고 제목 키워드로 변환)',
+  `salary`          VARCHAR(100) NULL     COMMENT '급여 (SALARY_COND 원문)',
+  `deadline`        DATE         NULL     COMMENT '마감일 (RCPT_END_DE). 상시채용(원본 20700101)이면 NULL',
+  `original_url`    VARCHAR(500) NOT NULL COMMENT '공고 원문 URL (잡코리아·고용24·잡아바 등)',
+  `closed`          TINYINT(1)   NOT NULL DEFAULT 0 COMMENT '관리자 마감 처리 (PATCH /admin/jobs/{jobId}/close). 마감일 경과는 deadline으로 판단',
+  `created_by`      BIGINT       NULL     COMMENT '등록한 관리자 ID (JOBABA면 NULL)',
   `collected_at`    DATETIME     NOT NULL COMMENT '수집 일시 (isNew 판단)',
   `updated_at`      DATETIME     NOT NULL COMMENT '수정일'
-) COMMENT = '채용공고 (고용24 수집)';
+) COMMENT = '채용공고 (잡아바 수집 + 관리자 등록)';
 
 CREATE TABLE `job_policy_match` (
   `job_id`    BIGINT NOT NULL COMMENT '공고 ID',
@@ -215,6 +220,12 @@ CREATE TABLE `post` (
   `updated_at`         DATETIME     NOT NULL COMMENT '수정일'
 ) COMMENT = '후기·포트폴리오';
 
+CREATE TABLE `post_like` (
+  `post_id`    BIGINT   NOT NULL COMMENT '게시글 ID',
+  `user_id`    BIGINT   NOT NULL COMMENT '회원 ID',
+  `created_at` DATETIME NOT NULL COMMENT '좋아요 일시'
+) COMMENT = '게시글 좋아요 (한 사람이 한 글에 1번)';
+
 CREATE TABLE `post_helpful_point` (
   `post_id` BIGINT      NOT NULL COMMENT '게시글 ID',
   `point`   VARCHAR(30) NOT NULL COMMENT '도움이 된 점'
@@ -223,7 +234,7 @@ CREATE TABLE `post_helpful_point` (
 CREATE TABLE `post_report` (
   `report_id`   BIGINT       NOT NULL COMMENT '신고 ID',
   `post_id`     BIGINT       NOT NULL COMMENT '게시글 ID',
-  `reporter_id` BIGINT       NOT NULL COMMENT '신고자 ID (post_id + reporter_id UNIQUE)',
+  `reporter_id` BIGINT       NULL     COMMENT '신고자 ID (post_id + reporter_id UNIQUE, 탈퇴 시 NULL로 남겨 신고 건수 유지)',
   `reason`      VARCHAR(30)  NOT NULL COMMENT 'ReportReason: PERSONAL_INFO, SPAM, ABUSE, FALSE_INFO, ETC',
   `detail`      VARCHAR(200) NULL     COMMENT '상세 내용',
   `status`      VARCHAR(30)  NOT NULL DEFAULT 'PENDING' COMMENT 'PENDING, RESOLVED',
@@ -237,6 +248,7 @@ CREATE TABLE `calendar_event` (
   `user_id`     BIGINT       NOT NULL COMMENT '회원 ID',
   `type`        VARCHAR(30)  NOT NULL COMMENT 'EventType: APPLY_START, APPLY_END, COUNSELING, PARTICIPATION, JOB_DEADLINE, CUSTOM',
   `event_date`  DATE         NOT NULL COMMENT '날짜',
+  `event_time`  TIME         NULL     COMMENT '시간 (선택, 응답은 HH:mm. 없으면 종일 일정)',
   `title`       VARCHAR(200) NOT NULL COMMENT '일정 제목',
   `memo`        VARCHAR(200) NULL     COMMENT '메모',
   `source_type` VARCHAR(30)  NOT NULL COMMENT 'POLICY, JOB, CUSTOM',
@@ -263,7 +275,7 @@ CREATE TABLE `notification` (
 -- ───────── 외부 데이터 수집 ─────────
 CREATE TABLE `sync_log` (
   `sync_log_id`   BIGINT       NOT NULL COMMENT '수집 기록 ID',
-  `source`        VARCHAR(30)  NOT NULL COMMENT 'ONTONG, WORK24',
+  `source`        VARCHAR(30)  NOT NULL COMMENT 'ONTONG, JOBABA',
   `trigger_type`  VARCHAR(30)  NOT NULL COMMENT 'SCHEDULED, MANUAL',
   `status`        VARCHAR(30)  NOT NULL COMMENT 'RUNNING, SUCCESS, FAILED',
   `fetched`       INT          NOT NULL DEFAULT 0 COMMENT '받은 건수',
@@ -301,23 +313,36 @@ ALTER TABLE `job_posting` ADD CONSTRAINT `PK_JOB_POSTING` PRIMARY KEY (`job_id`)
 ALTER TABLE `job_policy_match` ADD CONSTRAINT `PK_JOB_POLICY_MATCH` PRIMARY KEY (`job_id`, `policy_id`);
 ALTER TABLE `job_bookmark` ADD CONSTRAINT `PK_JOB_BOOKMARK` PRIMARY KEY (`bookmark_id`);
 ALTER TABLE `post` ADD CONSTRAINT `PK_POST` PRIMARY KEY (`post_id`);
+ALTER TABLE `post_like` ADD CONSTRAINT `PK_POST_LIKE` PRIMARY KEY (`post_id`, `user_id`);
 ALTER TABLE `post_helpful_point` ADD CONSTRAINT `PK_POST_HELPFUL_POINT` PRIMARY KEY (`post_id`, `point`);
 ALTER TABLE `post_report` ADD CONSTRAINT `PK_POST_REPORT` PRIMARY KEY (`report_id`);
 ALTER TABLE `calendar_event` ADD CONSTRAINT `PK_CALENDAR_EVENT` PRIMARY KEY (`event_id`);
 ALTER TABLE `notification` ADD CONSTRAINT `PK_NOTIFICATION` PRIMARY KEY (`notification_id`);
 ALTER TABLE `sync_log` ADD CONSTRAINT `PK_SYNC_LOG` PRIMARY KEY (`sync_log_id`);
 
--- ───────── 외래키 ─────────
-ALTER TABLE `refresh_token` ADD CONSTRAINT `FK_users_TO_refresh_token` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-ALTER TABLE `user_visit` ADD CONSTRAINT `FK_users_TO_user_visit` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-ALTER TABLE `user_life_stage` ADD CONSTRAINT `FK_users_TO_user_life_stage` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-ALTER TABLE `user_interest` ADD CONSTRAINT `FK_users_TO_user_interest` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-ALTER TABLE `job_preference` ADD CONSTRAINT `FK_users_TO_job_preference` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
-ALTER TABLE `job_preference_region` ADD CONSTRAINT `FK_job_preference_TO_region` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`);
-ALTER TABLE `job_preference_category` ADD CONSTRAINT `FK_job_preference_TO_category` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`);
-ALTER TABLE `job_preference_employment_type` ADD CONSTRAINT `FK_job_preference_TO_employment_type` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`);
+-- ───────── UNIQUE ─────────
+-- 엔티티에서는 @Column(unique = true) 또는 @Table(uniqueConstraints = ...)로 같은 제약을 건다
+ALTER TABLE `users` ADD CONSTRAINT `UQ_USERS_EMAIL` UNIQUE (`email`);
+ALTER TABLE `refresh_token` ADD CONSTRAINT `UQ_REFRESH_TOKEN_HASH` UNIQUE (`token_hash`);
+ALTER TABLE `policy` ADD CONSTRAINT `UQ_POLICY_EXTERNAL_ID` UNIQUE (`external_id`);
+ALTER TABLE `job_posting` ADD CONSTRAINT `UQ_JOB_POSTING_EXTERNAL_ID` UNIQUE (`external_id`);
+ALTER TABLE `job_bookmark` ADD CONSTRAINT `UQ_JOB_BOOKMARK_USER_JOB` UNIQUE (`user_id`, `job_id`);
+ALTER TABLE `post_report` ADD CONSTRAINT `UQ_POST_REPORT_POST_REPORTER` UNIQUE (`post_id`, `reporter_id`);
 
-ALTER TABLE `policy` ADD CONSTRAINT `FK_users_TO_policy` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`);
+-- ───────── 외래키 ─────────
+-- ON DELETE CASCADE: 회원·로드맵·관심 공고를 지우면 딸린 데이터와 자동 일정도 함께 삭제 (명세: 탈퇴, 항목 삭제, 관심 공고 해제)
+-- ON DELETE SET NULL: 탈퇴해도 게시글·신고·등록 정책은 남김 (명세: 게시글은 '탈퇴한 사용자'로 익명 처리)
+ALTER TABLE `refresh_token` ADD CONSTRAINT `FK_users_TO_refresh_token` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `user_visit` ADD CONSTRAINT `FK_users_TO_user_visit` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `user_life_stage` ADD CONSTRAINT `FK_users_TO_user_life_stage` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `user_interest` ADD CONSTRAINT `FK_users_TO_user_interest` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `job_preference` ADD CONSTRAINT `FK_users_TO_job_preference` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `job_preference_region` ADD CONSTRAINT `FK_job_preference_TO_region` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `job_preference_category` ADD CONSTRAINT `FK_job_preference_TO_category` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`) ON DELETE CASCADE;
+ALTER TABLE `job_preference_employment_type` ADD CONSTRAINT `FK_job_preference_TO_employment_type` FOREIGN KEY (`user_id`) REFERENCES `job_preference` (`user_id`) ON DELETE CASCADE;
+
+ALTER TABLE `policy` ADD CONSTRAINT `FK_users_TO_policy` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
+ALTER TABLE `job_posting` ADD CONSTRAINT `FK_users_TO_job_posting` FOREIGN KEY (`created_by`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 ALTER TABLE `policy_life_stage` ADD CONSTRAINT `FK_policy_TO_policy_life_stage` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
 ALTER TABLE `policy_tag` ADD CONSTRAINT `FK_policy_TO_policy_tag` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
 
@@ -327,29 +352,31 @@ ALTER TABLE `template_step` ADD CONSTRAINT `FK_roadmap_template_TO_template_step
 ALTER TABLE `template_step_policy` ADD CONSTRAINT `FK_template_step_TO_template_step_policy` FOREIGN KEY (`template_step_id`) REFERENCES `template_step` (`template_step_id`);
 ALTER TABLE `template_step_policy` ADD CONSTRAINT `FK_policy_TO_template_step_policy` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
 
-ALTER TABLE `roadmap` ADD CONSTRAINT `FK_users_TO_roadmap` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `roadmap` ADD CONSTRAINT `FK_users_TO_roadmap` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 ALTER TABLE `roadmap` ADD CONSTRAINT `FK_roadmap_template_TO_roadmap` FOREIGN KEY (`template_id`) REFERENCES `roadmap_template` (`template_id`);
-ALTER TABLE `roadmap_step` ADD CONSTRAINT `FK_roadmap_TO_roadmap_step` FOREIGN KEY (`roadmap_id`) REFERENCES `roadmap` (`roadmap_id`);
-ALTER TABLE `roadmap_item` ADD CONSTRAINT `FK_roadmap_step_TO_roadmap_item` FOREIGN KEY (`roadmap_step_id`) REFERENCES `roadmap_step` (`roadmap_step_id`);
+ALTER TABLE `roadmap_step` ADD CONSTRAINT `FK_roadmap_TO_roadmap_step` FOREIGN KEY (`roadmap_id`) REFERENCES `roadmap` (`roadmap_id`) ON DELETE CASCADE;
+ALTER TABLE `roadmap_item` ADD CONSTRAINT `FK_roadmap_step_TO_roadmap_item` FOREIGN KEY (`roadmap_step_id`) REFERENCES `roadmap_step` (`roadmap_step_id`) ON DELETE CASCADE;
 ALTER TABLE `roadmap_item` ADD CONSTRAINT `FK_policy_TO_roadmap_item` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
-ALTER TABLE `roadmap_item_history` ADD CONSTRAINT `FK_roadmap_item_TO_roadmap_item_history` FOREIGN KEY (`item_id`) REFERENCES `roadmap_item` (`item_id`);
+ALTER TABLE `roadmap_item_history` ADD CONSTRAINT `FK_roadmap_item_TO_roadmap_item_history` FOREIGN KEY (`item_id`) REFERENCES `roadmap_item` (`item_id`) ON DELETE CASCADE;
 
 ALTER TABLE `job_policy_match` ADD CONSTRAINT `FK_job_posting_TO_job_policy_match` FOREIGN KEY (`job_id`) REFERENCES `job_posting` (`job_id`);
 ALTER TABLE `job_policy_match` ADD CONSTRAINT `FK_policy_TO_job_policy_match` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
-ALTER TABLE `job_bookmark` ADD CONSTRAINT `FK_users_TO_job_bookmark` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `job_bookmark` ADD CONSTRAINT `FK_users_TO_job_bookmark` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 ALTER TABLE `job_bookmark` ADD CONSTRAINT `FK_job_posting_TO_job_bookmark` FOREIGN KEY (`job_id`) REFERENCES `job_posting` (`job_id`);
 
-ALTER TABLE `post` ADD CONSTRAINT `FK_users_TO_post` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `post` ADD CONSTRAINT `FK_users_TO_post` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 ALTER TABLE `post` ADD CONSTRAINT `FK_policy_TO_post` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
 ALTER TABLE `post` ADD CONSTRAINT `FK_job_posting_TO_post` FOREIGN KEY (`job_id`) REFERENCES `job_posting` (`job_id`);
 ALTER TABLE `post_helpful_point` ADD CONSTRAINT `FK_post_TO_post_helpful_point` FOREIGN KEY (`post_id`) REFERENCES `post` (`post_id`);
+ALTER TABLE `post_like` ADD CONSTRAINT `FK_post_TO_post_like` FOREIGN KEY (`post_id`) REFERENCES `post` (`post_id`) ON DELETE CASCADE;
+ALTER TABLE `post_like` ADD CONSTRAINT `FK_users_TO_post_like` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 ALTER TABLE `post_report` ADD CONSTRAINT `FK_post_TO_post_report` FOREIGN KEY (`post_id`) REFERENCES `post` (`post_id`);
-ALTER TABLE `post_report` ADD CONSTRAINT `FK_users_TO_post_report` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `post_report` ADD CONSTRAINT `FK_users_TO_post_report` FOREIGN KEY (`reporter_id`) REFERENCES `users` (`user_id`) ON DELETE SET NULL;
 
-ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_users_TO_calendar_event` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_users_TO_calendar_event` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;
 ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_policy_TO_calendar_event` FOREIGN KEY (`policy_id`) REFERENCES `policy` (`policy_id`);
 ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_job_posting_TO_calendar_event` FOREIGN KEY (`job_id`) REFERENCES `job_posting` (`job_id`);
-ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_roadmap_item_TO_calendar_event` FOREIGN KEY (`item_id`) REFERENCES `roadmap_item` (`item_id`);
-ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_job_bookmark_TO_calendar_event` FOREIGN KEY (`bookmark_id`) REFERENCES `job_bookmark` (`bookmark_id`);
+ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_roadmap_item_TO_calendar_event` FOREIGN KEY (`item_id`) REFERENCES `roadmap_item` (`item_id`) ON DELETE CASCADE;
+ALTER TABLE `calendar_event` ADD CONSTRAINT `FK_job_bookmark_TO_calendar_event` FOREIGN KEY (`bookmark_id`) REFERENCES `job_bookmark` (`bookmark_id`) ON DELETE CASCADE;
 
-ALTER TABLE `notification` ADD CONSTRAINT `FK_users_TO_notification` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`);
+ALTER TABLE `notification` ADD CONSTRAINT `FK_users_TO_notification` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE;

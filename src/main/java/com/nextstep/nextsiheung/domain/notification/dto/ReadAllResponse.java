@@ -1,0 +1,8 @@
+package com.nextstep.nextsiheung.domain.notification.dto;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+public record ReadAllResponse(
+        @Schema(example = "4") int updatedCount
+) {
+}

@@ -1,0 +1,32 @@
+# 운영 설정. 값은 서버의 환경변수 파일(/etc/next-siheung/env)에서 읽는다. 비밀값을 여기에 쓰지 않는다
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+    # ddl-auto는 application.yml의 validate 그대로: 테이블은 docs/schema.sql로 만든다
+
+app:
+  cors:
+    allowed-origins: ${CORS_ORIGINS}
+  jwt:
+    secret: ${JWT_SECRET}
+  external:
+    ontong-api-key: ${ONTONG_API_KEY}
+    gg-job-api-key: ${GG_JOB_API_KEY}
+  batch:
+    enabled: true                                    # 정책 03:00 · 공고 04:00 수집, 09:00 마감 알림
+    policy-sync-on-startup: ${SYNC_ON_STARTUP:false} # 첫 배포 때만 true로 켜서 바로 수집
+    job-sync-on-startup: ${SYNC_ON_STARTUP:false}
+
+# 운영에서는 Swagger를 끈다 (API 목록이 외부에 노출되지 않게)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false

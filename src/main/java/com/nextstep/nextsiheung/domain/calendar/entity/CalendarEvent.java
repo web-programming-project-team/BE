@@ -1,0 +1,146 @@
+package com.nextstep.nextsiheung.domain.calendar.entity;
+
+import com.nextstep.nextsiheung.domain.job.entity.JobBookmark;
+import com.nextstep.nextsiheung.domain.policy.entity.Policy;
+import com.nextstep.nextsiheung.domain.roadmap.entity.RoadmapItem;
+import com.nextstep.nextsiheung.domain.user.entity.User;
+import com.nextstep.nextsiheung.global.common.enums.EventType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+// ERD calendar_event. 로드맵 항목·관심 공고에서 자동으로 생긴 일정과 직접 추가한 일정
+// 자동 일정은 로드맵 항목(item_id)이나 관심 공고(bookmark_id)를 지우면 DB가 함께 지운다(ON DELETE CASCADE)
+@Getter
+@Entity
+@Table(name = "calendar_event")
+@EntityListeners(AuditingEntityListener.class)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class CalendarEvent {
+
+    public static final String SOURCE_POLICY = "POLICY";
+    public static final String SOURCE_JOB = "JOB";
+    public static final String SOURCE_CUSTOM = "CUSTOM";
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "event_id")
+    private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private User user;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private EventType type;
+
+    @Column(name = "event_date", nullable = false)
+    private LocalDate date;
+
+    // 시간이 없으면 종일 일정
+    private LocalTime eventTime;
+
+    @Column(nullable = false, length = 200)
+    private String title;
+
+    @Column(length = 200)
+    private String memo;
+
+    // POLICY · JOB · CUSTOM
+    @Column(nullable = false, length = 30)
+    private String sourceType;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "policy_id")
+    private Policy policy;
+
+    // 관심 공고 일정의 연결 공고 (sourceId로 응답)
+    @Column(name = "job_id")
+    private Long jobId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "item_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private RoadmapItem item;
+
+    // 관심 공고를 해제하면 DB가 이 일정도 함께 지운다
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bookmark_id")
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    private JobBookmark bookmark;
+
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    private CalendarEvent(User user, EventType type, LocalDate date, LocalTime eventTime, String title, String memo,
+                          String sourceType, Policy policy, RoadmapItem item) {
+        this.user = user;
+        this.type = type;
+        this.date = date;
+        this.eventTime = eventTime;
+        this.title = title;
+        this.memo = memo;
+        this.sourceType = sourceType;
+        this.policy = policy;
+        this.item = item;
+    }
+
+    // 로드맵 항목의 접수 시작·마감일 자동 일정
+    public static CalendarEvent forRoadmapItem(User user, RoadmapItem item, EventType type, LocalDate date,
+                                               String title) {
+        return new CalendarEvent(user, type, date, null, title, null, SOURCE_POLICY, item.getPolicy(), item);
+    }
+
+    // 관심 공고의 채용 마감일 자동 일정 (상시채용이라 마감일이 없으면 만들지 않는다)
+    public static CalendarEvent forBookmark(User user, JobBookmark bookmark, LocalDate deadline, String title) {
+        CalendarEvent event = new CalendarEvent(user, EventType.JOB_DEADLINE, deadline, null, title, null, SOURCE_JOB,
+                null, null);
+        event.jobId = bookmark.getJob().getId();
+        event.bookmark = bookmark;
+        return event;
+    }
+
+    // 정책 상세의 '캘린더에 추가' (상담일·참여일 등)
+    public static CalendarEvent forPolicy(User user, Policy policy, EventType type, LocalDate date, LocalTime time,
+                                          String title, String memo) {
+        return new CalendarEvent(user, type, date, time, title, memo, SOURCE_POLICY, policy, null);
+    }
+
+    public static CalendarEvent custom(User user, LocalDate date, LocalTime time, String title, String memo) {
+        return new CalendarEvent(user, EventType.CUSTOM, date, time, title, memo, SOURCE_CUSTOM, null, null);
+    }
+
+    // 로드맵 항목·관심 공고에서 자동으로 생긴 일정은 직접 지울 수 없다
+    public boolean isAutoGenerated() {
+        return item != null || bookmark != null;
+    }
+
+    public Long sourceId() {
+        if (policy != null) {
+            return policy.getId();
+        }
+        return jobId;
+    }
+}
